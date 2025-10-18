@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "name": "kigali-go",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/frontend/build/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "@react_app_api_url",
+    "REACT_APP_GOOGLE_MAPS_KEY": "@react_app_google_maps_key"
+  },
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "@react_app_api_url",
+      "REACT_APP_GOOGLE_MAPS_KEY": "@react_app_google_maps_key"
+    }
+  }
+}

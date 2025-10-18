@@ -1,0 +1,216 @@
+{
+  "app": {
+    "name": "KigaliGo",
+    "tagline": "Smart Transport for Kigali",
+    "description": "Plan trips, estimate fares, and find nearby transport in Kigali"
+  },
+  "navigation": {
+    "home": "Home",
+    "map": "Map",
+    "plan": "Plan Trip",
+    "reports": "Reports",
+    "profile": "Profile"
+  },
+  "home": {
+    "welcome": "Welcome to KigaliGo",
+    "subtitle": "Your smart transport companion for Kigali",
+    "quickActions": {
+      "planTrip": "Plan a Trip",
+      "viewMap": "View Map",
+      "estimateFare": "Estimate Fare",
+      "reportIssue": "Report Issue"
+    },
+    "features": {
+      "title": "Why Choose KigaliGo?",
+      "realtime": {
+        "title": "Real-time Tracking",
+        "description": "See live locations of buses, taxis, and motorcycles"
+      },
+      "fares": {
+        "title": "Fair Pricing",
+        "description": "Get accurate fare estimates for all transport modes"
+      },
+      "routes": {
+        "title": "Smart Routes",
+        "description": "Find the best routes combining different transport options"
+      },
+      "safety": {
+        "title": "Safety First",
+        "description": "Report issues and track your journey safely"
+      }
+    },
+    "stats": {
+      "title": "Kigali Transport Stats",
+      "vehicles": "Active Vehicles",
+      "zones": "Service Zones",
+      "trips": "Trips Today"
+    }
+  },
+  "map": {
+    "title": "Live Transport Map",
+    "loading": "Loading map...",
+    "noLocation": "Location access required to show nearby vehicles",
+    "enableLocation": "Enable Location",
+    "legend": {
+      "title": "Legend",
+      "bus": "Bus (Tap&Go)",
+      "taxi": "Taxi",
+      "moto": "Motorcycle Taxi"
+    },
+    "nearbyVehicles": "Nearby Vehicles",
+    "noVehicles": "No vehicles found nearby",
+    "vehicleDetails": {
+      "type": "Type",
+      "operator": "Operator",
+      "eta": "ETA",
+      "distance": "Distance"
+    }
+  },
+  "plan": {
+    "title": "Plan Your Trip",
+    "from": "From",
+    "to": "To",
+    "currentLocation": "Use Current Location",
+    "selectLocation": "Select Location",
+    "searching": "Searching for routes...",
+    "noResults": "No routes found. Try different locations.",
+    "routeOptions": {
+      "title": "Route Options",
+      "fastest": "Fastest",
+      "cheapest": "Cheapest",
+      "mostConvenient": "Most Convenient"
+    },
+    "tripDetails": {
+      "duration": "Duration",
+      "distance": "Distance",
+      "fare": "Estimated Fare",
+      "steps": "Route Steps"
+    },
+    "startTrip": "Start Trip",
+    "saveTrip": "Save Trip"
+  },
+  "fare": {
+    "title": "Fare Estimator",
+    "distance": "Distance (km)",
+    "duration": "Duration (minutes)",
+    "mode": "Transport Mode",
+    "modes": {
+      "bus": "Bus (Tap&Go)",
+      "moto": "Motorcycle Taxi",
+      "taxi": "Taxi"
+    },
+    "estimate": "Estimate Fare",
+    "result": {
+      "title": "Estimated Fare",
+      "baseFare": "Base Fare",
+      "distanceCharge": "Distance Charge",
+      "timeCharge": "Time Charge",
+      "total": "Total",
+      "currency": "RWF"
+    },
+    "factors": {
+      "title": "Fare Factors",
+      "peakHours": "Peak Hours (7-9 AM, 5-7 PM)",
+      "nightTime": "Night Time (10 PM - 6 AM)",
+      "zone": "Zone Premium"
+    }
+  },
+  "reports": {
+    "title": "Report an Issue",
+    "newReport": "New Report",
+    "type": "Report Type",
+    "types": {
+      "overcharge": "Overcharge",
+      "safety": "Safety Concern",
+      "service": "Poor Service",
+      "other": "Other"
+    },
+    "titleField": "Title",
+    "description": "Description",
+    "location": "Location",
+    "vehicle": "Vehicle (Optional)",
+    "vehicleRegistration": "Vehicle Registration",
+    "photo": "Photo (Optional)",
+    "submit": "Submit Report",
+    "submitting": "Submitting...",
+    "success": "Report submitted successfully",
+    "error": "Failed to submit report"
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Personal Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "language": "Preferred Language",
+    "languages": {
+      "en": "English",
+      "rw": "Kinyarwanda"
+    },
+    "save": "Save Changes",
+    "saved": "Profile updated successfully",
+    "tripHistory": "Trip History",
+    "noTrips": "No trips yet",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "about": "About KigaliGo",
+    "version": "Version 1.0.0"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "select": "Select",
+    "clear": "Clear",
+    "refresh": "Refresh",
+    "share": "Share",
+    "copy": "Copy",
+    "paste": "Paste",
+    "cut": "Cut"
+  },
+  "errors": {
+    "network": "Network error. Please check your connection.",
+    "location": "Location access denied. Please enable location services.",
+    "validation": "Please fill in all required fields.",
+    "unauthorized": "Please log in to continue.",
+    "forbidden": "You don't have permission to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "server": "Server error. Please try again later."
+  },
+  "success": {
+    "tripSaved": "Trip saved successfully",
+    "reportSubmitted": "Report submitted successfully",
+    "profileUpdated": "Profile updated successfully",
+    "settingsSaved": "Settings saved successfully"
+  },
+  "time": {
+    "now": "Now",
+    "minutes": "{{count}} min",
+    "minutes_plural": "{{count}} mins",
+    "hours": "{{count}} hr",
+    "hours_plural": "{{count}} hrs",
+    "days": "{{count}} day",
+    "days_plural": "{{count}} days"
+  },
+  "currency": {
+    "symbol": "RWF",
+    "format": "{{amount}} RWF"
+  }
+}

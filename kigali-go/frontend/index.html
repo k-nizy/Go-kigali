@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KigaliGo - Smart Transport for Kigali</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1E90FF 0%, #2EB872 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1E90FF;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            background: #1E90FF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background: #0066CC;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #FFC857;
+        }
+        
+        .btn-secondary:hover {
+            background: #E6B047;
+        }
+        
+        .btn-success {
+            background: #2EB872;
+        }
+        
+        .btn-success:hover {
+            background: #269B5E;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1E90FF;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .vehicle-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .vehicle-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s ease;
+        }
+        
+        .vehicle-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .vehicle-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .vehicle-icon.bus { background: #1E90FF; }
+        .vehicle-icon.taxi { background: #2EB872; }
+        .vehicle-icon.moto { background: #FFC857; }
+        
+        .vehicle-info {
+            flex: 1;
+        }
+        
+        .vehicle-type {
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+        
+        .vehicle-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚌 KigaliGo</h1>
+            <p>Smart Transport for Kigali</p>
+        </div>
+        
+        <!-- Statistics Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalVehicles">-</div>
+                <div class="stat-label">Active Vehicles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalZones">-</div>
+                <div class="stat-label">Service Zones</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayTrips">-</div>
+                <div class="stat-label">Trips Today</div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <h2>Quick Actions</h2>
+            <button class="btn" onclick="loadStatistics()">📊 Load Statistics</button>
+            <button class="btn btn-secondary" onclick="loadVehicles()">🚗 Find Nearby Vehicles</button>
+            <button class="btn btn-success" onclick="estimateFare()">💰 Estimate Fare</button>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        
+        <!-- Error/Success Messages -->
+        <div id="message"></div>
+        
+        <!-- Statistics Display -->
+        <div id="statistics" class="card hidden">
+            <h2>System Statistics</h2>
+            <div id="statsContent"></div>
+        </div>
+        
+        <!-- Vehicles Display -->
+        <div id="vehicles" class="card hidden">
+            <h2>Nearby Vehicles</h2>
+            <div id="vehiclesContent" class="vehicle-list"></div>
+        </div>
+        
+        <!-- Fare Estimation -->
+        <div id="fareEstimation" class="card hidden">
+            <h2>Fare Estimation</h2>
+            <div id="fareContent">
+                <p>Distance: 5.2 km</p>
+                <p>Duration: 15 minutes</p>
+                <p>Mode: Bus</p>
+                <div id="fareResult"></div>
+            </div>
+        </div>
+        
+        <!-- API Information -->
+        <div class="card">
+            <h2>API Endpoints</h2>
+            <p>Backend is running at: <strong>http://localhost:5000</strong></p>
+            <ul>
+                <li><a href="http://localhost:5000/health" target="_blank">Health Check</a></li>
+                <li><a href="http://localhost:5000/api/v1/docs" target="_blank">API Documentation</a></li>
+                <li><a href="http://localhost:5000/api/v1/statistics" target="_blank">Statistics</a></li>
+                <li><a href="http://localhost:5000/api/v1/vehicles/nearby" target="_blank">Nearby Vehicles</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/v1';
+        
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+        
+        function showMessage(text, type = 'error') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${text}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+        
+        async function loadStatistics() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/statistics`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const stats = data.statistics;
+                    document.getElementById('totalVehicles').textContent = stats.total_vehicles;
+                    document.getElementById('totalZones').textContent = stats.total_zones;
+                    document.getElementById('todayTrips').textContent = stats.today_trips;
+                    
+                    document.getElementById('statistics').classList.remove('hidden');
+                    document.getElementById('statsContent').innerHTML = `
+                        <p><strong>Total Vehicles:</strong> ${stats.total_vehicles}</p>
+                        <p><strong>Active Vehicles:</strong> ${stats.active_vehicles}</p>
+                        <p><strong>Total Zones:</strong> ${stats.total_zones}</p>
+                        <p><strong>Total Stops:</strong> ${stats.total_stops}</p>
+                        <p><strong>Total Trips:</strong> ${stats.total_trips}</p>
+                        <p><strong>Today's Trips:</strong> ${stats.today_trips}</p>
+                    `;
+                    
+                    showMessage('Statistics loaded successfully!', 'success');
+                } else {
+                    showMessage('Failed to load statistics');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function loadVehicles() {
+            showLoading();
+            try {
+                // Use Kigali center coordinates
+                const response = await fetch(`${API_BASE}/vehicles/nearby?lat=-1.9441&lng=30.0619&radius=5.0`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const vehicles = data.vehicles;
+                    const vehiclesContent = document.getElementById('vehiclesContent');
+                    
+                    if (vehicles.length > 0) {
+                        vehiclesContent.innerHTML = vehicles.map(vehicle => `
+                            <div class="vehicle-item">
+                                <div class="vehicle-icon ${vehicle.vehicle_type}">
+                                    ${vehicle.vehicle_type === 'bus' ? '🚌' : vehicle.vehicle_type === 'taxi' ? '🚗' : '🏍️'}
+                                </div>
+                                <div class="vehicle-info">
+                                    <div class="vehicle-type">${vehicle.vehicle_type} - ${vehicle.registration}</div>
+                                    <div class="vehicle-details">
+                                        Operator: ${vehicle.operator || 'Private'} | 
+                                        Distance: ${vehicle.distance_km} km | 
+                                        ETA: ${vehicle.eta_minutes} min
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        vehiclesContent.innerHTML = '<p>No vehicles found nearby.</p>';
+                    }
+                    
+                    document.getElementById('vehicles').classList.remove('hidden');
+                    showMessage(`Found ${vehicles.length} vehicles nearby!`, 'success');
+                } else {
+                    showMessage('Failed to load vehicles');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function estimateFare() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/fare/estimate?distance_km=5.2&duration_minutes=15&mode=bus`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('fareResult').innerHTML = `
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; margin-top: 15px;">
+                            <h3>Estimated Fare: ${data.estimated_fare} ${data.currency}</h3>
+                            <p><strong>Mode:</strong> ${data.mode}</p>
+                            <p><strong>Distance:</strong> ${data.distance_km} km</p>
+                            <p><strong>Duration:</strong> ${data.duration_minutes} minutes</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('fareEstimation').classList.remove('hidden');
+                    showMessage('Fare estimated successfully!', 'success');
+                } else {
+                    showMessage('Failed to estimate fare');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Load statistics on page load
+        window.addEventListener('load', () => {
+            showMessage('KigaliGo Frontend loaded! Click buttons to test the API.', 'success');
+        });
+    </script>
+</body>
+</html>

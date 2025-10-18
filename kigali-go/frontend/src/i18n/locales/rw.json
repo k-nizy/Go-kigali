@@ -1,0 +1,216 @@
+{
+  "app": {
+    "name": "KigaliGo",
+    "tagline": "Imiyoboro y'ubwoba mu Kigali",
+    "description": "Tegura urugendo, menya ibiciro, unyuze ibikoresho by'ubwoba bya hafi"
+  },
+  "navigation": {
+    "home": "Uruhushya",
+    "map": "Ikarita",
+    "plan": "Tegura Urugendo",
+    "reports": "Amakuru",
+    "profile": "Ibyangombwa"
+  },
+  "home": {
+    "welcome": "Murakaza neza muri KigaliGo",
+    "subtitle": "Umugenzi wanyu w'ubwoba bwo mu Kigali",
+    "quickActions": {
+      "planTrip": "Tegura Urugendo",
+      "viewMap": "Reba Ikarita",
+      "estimateFare": "Menya Igiciro",
+      "reportIssue": "Tanga Ikibazo"
+    },
+    "features": {
+      "title": "Ni iki gituma KigaliGo?",
+      "realtime": {
+        "title": "Gukurikira mu Gihe",
+        "description": "Reba aho biri mu gihe cy'ukuri amabasi, amatagisi, n'amamotari"
+      },
+      "fares": {
+        "title": "Ibiciro byiza",
+        "description": "Bona ibiciro by'ukuri by'ibikoresho byose by'ubwoba"
+      },
+      "routes": {
+        "title": "Imiyoboro y'ubwoba",
+        "description": "Shakisha imiyoboro myiza ihujije ibikoresho bitandukanye by'ubwoba"
+      },
+      "safety": {
+        "title": "Umutekano ni ibanze",
+        "description": "Tanga ibibazo kandi ukurikire urugendo rwawe mu mutekano"
+      }
+    },
+    "stats": {
+      "title": "Amakuru y'ubwoba mu Kigali",
+      "vehicles": "Imodoka Zikora",
+      "zones": "Ubwoba bw'Intara",
+      "trips": "Amagendo Uyu munsi"
+    }
+  },
+  "map": {
+    "title": "Ikarita y'Imiyoboro mu Gihe",
+    "loading": "Irarangura ikarita...",
+    "noLocation": "Urukenerwa ko ubona aho uri kugira ngo werekane imodoka ziri hafi",
+    "enableLocation": "Emera Aho Uri",
+    "legend": {
+      "title": "Icyitegererezo",
+      "bus": "Basi (Tap&Go)",
+      "taxi": "Tagisi",
+      "moto": "Motari y'Ubwoba"
+    },
+    "nearbyVehicles": "Imodoka Ziri Hafi",
+    "noVehicles": "Nta modoka yabonetse hafi",
+    "vehicleDetails": {
+      "type": "Ubwoko",
+      "operator": "Umukoresha",
+      "eta": "Igihe Kiraza",
+      "distance": "Intera"
+    }
+  },
+  "plan": {
+    "title": "Tegura Urugendo Rwawe",
+    "from": "Kuva",
+    "to": "Kugeza",
+    "currentLocation": "Koresha Aho Uri",
+    "selectLocation": "Hitamo Aho",
+    "searching": "Rashakisha imiyoboro...",
+    "noResults": "Nta miyoboro yabonetse. Gerageza ahantu handi.",
+    "routeOptions": {
+      "title": "Amahitamo y'Uruhushya",
+      "fastest": "Rihuta Cyane",
+      "cheapest": "Biciye Cyane",
+      "mostConvenient": "Bikunze Cyane"
+    },
+    "tripDetails": {
+      "duration": "Igihe",
+      "distance": "Intera",
+      "fare": "Igiciro Giteganyijwe",
+      "steps": "Intambwe z'Uruhushya"
+    },
+    "startTrip": "Tangira Urugendo",
+    "saveTrip": "Bika Urugendo"
+  },
+  "fare": {
+    "title": "Umuyoboro w'Ibiciro",
+    "distance": "Intera (km)",
+    "duration": "Igihe (iminota)",
+    "mode": "Ubwoko bw'Ubwoba",
+    "modes": {
+      "bus": "Basi (Tap&Go)",
+      "moto": "Motari y'Ubwoba",
+      "taxi": "Tagisi"
+    },
+    "estimate": "Gereranya Igiciro",
+    "result": {
+      "title": "Igiciro Giteganyijwe",
+      "baseFare": "Igiciro cy'Ubwibanze",
+      "distanceCharge": "Igiciro cy'Intera",
+      "timeCharge": "Igiciro cy'Igihe",
+      "total": "Byose Hamwe",
+      "currency": "RWF"
+    },
+    "factors": {
+      "title": "Ibintu Bishimangira Igiciro",
+      "peakHours": "Amasaha y'Icyumweru (7-9 AM, 5-7 PM)",
+      "nightTime": "Igihe cy'ijoro (10 PM - 6 AM)",
+      "zone": "Agaciro ka Zone"
+    }
+  },
+  "reports": {
+    "title": "Tanga Ikibazo",
+    "newReport": "Ikibazo Gishya",
+    "type": "Ubwoko bw'Ikibazo",
+    "types": {
+      "overcharge": "Kwishyura Byinshi",
+      "safety": "Amakenga y'Umutekano",
+      "service": "Serivisi Nke",
+      "other": "Ibindi"
+    },
+    "titleField": "Umutwe",
+    "description": "Ibisobanuro",
+    "location": "Aho",
+    "vehicle": "Imodoka (Bibyo)",
+    "vehicleRegistration": "Kwiyandikisha Imodoka",
+    "photo": "Ifoto (Bibyo)",
+    "submit": "Ohereza Ikibazo",
+    "submitting": "Arahaguruka...",
+    "success": "Ikibazo cyoherejwe neza",
+    "error": "Ntibyashobotse kohereza ikibazo"
+  },
+  "profile": {
+    "title": "Ibyangombwa",
+    "personalInfo": "Amakuru y'Umuntu",
+    "name": "Amazina",
+    "email": "Imeri",
+    "phone": "Telefone",
+    "language": "Ururimi Rukunze",
+    "languages": {
+      "en": "Icyongereza",
+      "rw": "Ikinyarwanda"
+    },
+    "save": "Bika Imihindagurikire",
+    "saved": "Ibyangombwa byavuguruwe neza",
+    "tripHistory": "Amateka y'Amagendo",
+    "noTrips": "Nta magendo mbere",
+    "settings": "Igenamiterere",
+    "notifications": "Amakuru",
+    "privacy": "Ubwigenge",
+    "about": "Ibyerekeye KigaliGo",
+    "version": "Verisiyo 1.0.0"
+  },
+  "common": {
+    "loading": "Ararangura...",
+    "error": "Habayeho ikosa",
+    "retry": "Gerageza Nanone",
+    "cancel": "Kuraho",
+    "confirm": "Emeza",
+    "save": "Bika",
+    "edit": "Hindura",
+    "delete": "Gusiba",
+    "search": "Shakisha",
+    "filter": "Shyiraho",
+    "sort": "Gutondekanya",
+    "close": "Funga",
+    "back": "Subira",
+    "next": "Ibikurikira",
+    "previous": "Byabanjirije",
+    "done": "Byarangiye",
+    "yes": "Yego",
+    "no": "Oya",
+    "ok": "OK",
+    "select": "Hitamo",
+    "clear": "Gusukura",
+    "refresh": "Kuvugurura",
+    "share": "Gusangira",
+    "copy": "Gukoporora",
+    "paste": "Gushyira",
+    "cut": "Gukata"
+  },
+  "errors": {
+    "network": "Ikosa ry'urubuga. Reba urusobe rwawe.",
+    "location": "Ntibyemewe ko ubona aho uri. Emera serivisi z'aho uri.",
+    "validation": "Nyamuneka uzuzemo ibyifuzo byose bya ngombwa.",
+    "unauthorized": "Nyamuneka winjire kugira ngo ukomeze.",
+    "forbidden": "Nta mperezwa mfite uko ukora iki gikorwa.",
+    "notFound": "Ntabwo icyifuzo cyabonetse.",
+    "server": "Ikosa ry'umuyoboro. Nyamuneka gerageza nanone."
+  },
+  "success": {
+    "tripSaved": "Urugendo rwabitswe neza",
+    "reportSubmitted": "Ikibazo cyoherejwe neza",
+    "profileUpdated": "Ibyangombwa byavuguruwe neza",
+    "settingsSaved": "Igenamiterere byabitswe neza"
+  },
+  "time": {
+    "now": "Ubu",
+    "minutes": "{{count}} min",
+    "minutes_plural": "{{count}} min",
+    "hours": "{{count}} isaha",
+    "hours_plural": "{{count}} amasaha",
+    "days": "{{count}} umunsi",
+    "days_plural": "{{count}} iminsi"
+  },
+  "currency": {
+    "symbol": "RWF",
+    "format": "{{amount}} RWF"
+  }
+}
