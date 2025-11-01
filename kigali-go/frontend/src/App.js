@@ -7,9 +7,9 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import MapPage from './pages/MapPage';
 import PlanTripPage from './pages/PlanTripPage';
+import FareEstimatorPage from './pages/FareEstimatorPage';
 import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
-import FareEstimatorPage from './pages/FareEstimatorPage';
 import './App.css';
 
 function App() {
