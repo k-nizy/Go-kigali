@@ -1,0 +1,22 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#F8FAFC"/>
+  
+  <!-- Map placeholder -->
+  <rect x="50" y="40" width="300" height="200" fill="#E2E8F0" rx="15"/>
+  
+  <!-- Map lines -->
+  <line x1="80" y1="80" x2="200" y2="80" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="80" x2="200" y2="150" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="150" x2="320" y2="150" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Location pin -->
+  <g transform="translate(200, 120)">
+    <circle cx="0" cy="0" r="25" fill="#94A3B8" opacity="0.3"/>
+    <path d="M 0 -15 C -6 -15 -11 -10 -11 -4 C -11 3 0 15 0 15 C 0 15 11 3 11 -4 C 11 -10 6 -15 0 -15 Z" fill="#64748B"/>
+    <circle cx="0" cy="-5" r="4" fill="#F8FAFC"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="200" y="270" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#64748B" text-anchor="middle">No data available</text>
+</svg>

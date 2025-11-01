@@ -1,0 +1,24 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Imigongo-inspired geometric pattern -->
+  <defs>
+    <pattern id="imigongoPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <!-- Diamond shapes -->
+      <path d="M 50 0 L 75 25 L 50 50 L 25 25 Z" fill="#2EB872" opacity="0.1"/>
+      <path d="M 0 50 L 25 75 L 0 100 L -25 75 Z" fill="#1E90FF" opacity="0.1"/>
+      <path d="M 100 50 L 125 75 L 100 100 L 75 75 Z" fill="#FFC857" opacity="0.1"/>
+      <path d="M 50 50 L 75 75 L 50 100 L 25 75 Z" fill="#2EB872" opacity="0.15"/>
+      
+      <!-- Curved lines -->
+      <path d="M 0 0 Q 25 25 0 50" stroke="#1E90FF" stroke-width="2" opacity="0.1" fill="none"/>
+      <path d="M 50 0 Q 75 25 50 50" stroke="#2EB872" stroke-width="2" opacity="0.1" fill="none"/>
+      <path d="M 100 0 Q 75 25 100 50" stroke="#FFC857" stroke-width="2" opacity="0.1" fill="none"/>
+      
+      <!-- Dots -->
+      <circle cx="50" cy="25" r="3" fill="#1E90FF" opacity="0.2"/>
+      <circle cx="25" cy="50" r="3" fill="#2EB872" opacity="0.2"/>
+      <circle cx="75" cy="50" r="3" fill="#FFC857" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <rect width="200" height="200" fill="url(#imigongoPattern)"/>
+</svg>
