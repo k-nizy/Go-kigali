@@ -52,14 +52,14 @@ export const apiService = {
   // Trip planning
   routes: {
     plan: (origin, destination) => 
-      api.get(`/routes/plan?origin=${origin}&destination=${destination}`),
+      api.get(`/routes/plan?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`),
   },
 
   // Vehicles
   vehicles: {
     getNearby: (lat, lng, radius = 1.0, type = null) => {
-      let url = `/vehicles/nearby?lat=${lat}&lng=${lng}&radius=${radius}`;
-      if (type) url += `&type=${type}`;
+      let url = `/vehicles/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+      if (type) url += `&type=${encodeURIComponent(type)}`;
       return api.get(url);
     },
   },
@@ -69,14 +69,14 @@ export const apiService = {
     getAll: () => api.get('/zones'),
   },
   stops: {
-    getByZone: (zoneId) => api.get(`/stops?zone_id=${zoneId}`),
+    getByZone: (zoneId) => api.get(`/stops?zone_id=${encodeURIComponent(zoneId)}`),
     getAll: () => api.get('/stops'),
   },
 
   // Fare estimation
   fare: {
     estimate: (distance, duration, mode) =>
-      api.get(`/fare/estimate?distance_km=${distance}&duration_minutes=${duration}&mode=${mode}`),
+      api.get(`/fare/estimate?distance_km=${encodeURIComponent(distance)}&duration_minutes=${encodeURIComponent(duration)}&mode=${encodeURIComponent(mode)}`),
   },
 
   // Reports
