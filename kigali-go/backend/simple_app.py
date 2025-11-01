@@ -1,4 +1,4 @@
-"""
+you sayed """
 Simplified KigaliGo Backend for Quick Testing
 This version uses SQLite instead of PostgreSQL for easier setup
 """
@@ -210,7 +210,7 @@ def get_zones():
 
 @app.route('/api/v1/fare/estimate')
 def estimate_fare():
-    """Estimate fare for a trip"""
+    """Estimate fare for a trip with detailed breakdown"""
     distance_km = float(request.args.get('distance_km', 0))
     duration_minutes = float(request.args.get('duration_minutes', 0))
     mode = request.args.get('mode', 'bus')
@@ -218,21 +218,42 @@ def estimate_fare():
     if distance_km <= 0 or duration_minutes <= 0:
         return jsonify({'error': 'Distance and duration must be positive'}), 400
     
-    # Simple fare calculation
+    # Base fares and rates by mode
     if mode == 'bus':
-        estimated_fare = max(500, distance_km * 150)
+        base_fare = 500
+        per_km_rate = 150
+        per_minute_rate = 10
     elif mode == 'moto':
-        estimated_fare = max(800, distance_km * 300)
+        base_fare = 800
+        per_km_rate = 300
+        per_minute_rate = 20
     elif mode == 'taxi':
-        estimated_fare = max(1200, distance_km * 400)
+        base_fare = 2000
+        per_km_rate = 400
+        per_minute_rate = 50
     else:
-        estimated_fare = 1000
+        base_fare = 1000
+        per_km_rate = 200
+        per_minute_rate = 15
+    
+    # Calculate fare components
+    distance_fare = distance_km * per_km_rate
+    time_fare = duration_minutes * per_minute_rate
+    total_fare = base_fare + distance_fare + time_fare
+    
+    # Round to nearest 50 RWF for realistic pricing
+    total_fare = round(total_fare / 50) * 50
     
     return jsonify({
+        'fare': {
+            'base_fare': int(base_fare),
+            'distance_fare': int(round(distance_fare)),
+            'time_fare': int(round(time_fare)),
+            'total_fare': int(total_fare)
+        },
         'mode': mode,
         'distance_km': distance_km,
         'duration_minutes': duration_minutes,
-        'estimated_fare': round(estimated_fare),
         'currency': 'RWF',
         'timestamp': datetime.utcnow().isoformat()
     })
@@ -288,6 +309,53 @@ def plan_route():
         'options': options,
         'timestamp': datetime.utcnow().isoformat()
     })
+
+@app.route('/api/v1/reports', methods=['POST'])
+def submit_report():
+    """Submit a user report about transport issues"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        report_type = data.get('type', 'other')
+        title = data.get('title', '')
+        description = data.get('description', '')
+        
+        # Either title or description must be provided
+        if not title and not description:
+            return jsonify({'error': 'Title or description is required'}), 400
+        
+        # Extract optional fields
+        location = data.get('location', '')
+        vehicle_registration = data.get('vehicle_registration', '')
+        photo = data.get('photo')
+        
+        # In a real app, save to database
+        # For now, just log and return success
+        report_id = f"RPT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        
+        print(f"📝 New Report Received:")
+        print(f"   ID: {report_id}")
+        print(f"   Type: {report_type}")
+        print(f"   Title: {title}")
+        print(f"   Description: {description}")
+        print(f"   Location: {location}")
+        print(f"   Vehicle: {vehicle_registration}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Report submitted successfully. Thank you for helping improve our service!',
+            'report_id': report_id,
+            'status': 'pending',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 201
+        
+    except Exception as e:
+        print(f"❌ Error submitting report: {e}")
+        return jsonify({'error': 'Failed to submit report', 'details': str(e)}), 500
 
 if __name__ == '__main__':
     # Initialize database
