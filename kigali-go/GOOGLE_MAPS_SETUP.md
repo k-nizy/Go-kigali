@@ -1,7 +1,7 @@
 # Google Maps API Setup Guide
 
 ## Why You Need This
-The map functionality in KigaliGo requires a Google Maps API key to display interactive maps and show vehicle locations in real-time.
+The map functionality in KigaliGo requires a Google Maps API key to display interactive maps and show vehicle locations in the real-time.
 
 ## Steps to Get a Google Maps API Key
 
