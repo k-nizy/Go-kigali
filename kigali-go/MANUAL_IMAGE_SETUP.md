@@ -120,7 +120,7 @@ cd /home/kevin/G4_ProjectProposal/kigali-go/frontend/public/images/
 
 ---
 
-## ⚙️ **Step 4: Run Helper Script (1 minute)**
+## ⚙️ **Step 4: The Run Helper Script (1 minute)**
 
 ```bash
 cd /home/kevin/G4_ProjectProposal/kigali-go/
