@@ -4,7 +4,7 @@
 
 ### 3.4.1 Database Management System
 
-KigaliGo uses **PostgreSQL 13+** for production deployment and **SQLite** for development/testing. PostgreSQL is chosen for its robust support for JSON data types, geospatial extensions (PostGIS), and scalability. SQLAlchemy ORM provides database-agnostic code, allowing seamless transition between development and production environments.
+KigaliGo uses **PostgreSQL 13+** for production deployment and **SQLite** for development/testing. PostgreSQL is chosen for its robust support for JSON data types, geospatial extensions (PostGIS), and scalability. SQLAlchemy's ORM provides database-agnostic code, allowing for a seamless transition between development and production environments.
 
 ### 3.4.2 Database Tables and Schema
 
