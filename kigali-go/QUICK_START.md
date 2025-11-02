@@ -1,6 +1,6 @@
 # KigaliGo Quick Start Guide
 
-## 🚀 Running the Application
+## 🚀 Run the Application
 
 ### One-Command Start
 ```bash
