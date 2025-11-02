@@ -1,6 +1,6 @@
 # 🔧 Location Timeout Issue - Complete Fix
 
-## Why Timeouts Were Occurring
+## Why The Timeouts Were Occurring
 
 ### Root Causes:
 1. **GPS Takes Time**: High-accuracy GPS can take 10-30 seconds to get a fix
