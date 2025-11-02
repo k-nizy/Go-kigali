@@ -1,4 +1,4 @@
-you sayed """
+You sayed """
 Simplified KigaliGo Backend for Quick Testing
 This version uses SQLite instead of PostgreSQL for easier setup
 """
