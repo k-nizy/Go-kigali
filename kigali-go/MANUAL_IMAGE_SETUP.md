@@ -12,7 +12,7 @@ Since I cannot download images directly, here's exactly what YOU need to do:
 
 ---
 
-## 🔽 **Step 1: Download Images (10 minutes)**
+## 🔽 **Step 1: Download Images ( in 10 minutes)**
 
 ### **Open these links in your browser and download:**
 
