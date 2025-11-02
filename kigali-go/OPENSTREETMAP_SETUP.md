@@ -2,7 +2,7 @@
 
 ## ✅ What We're Using
 
-**OpenStreetMap** with **Leaflet.js** - completely free and open source!
+**OpenStreetMap** with **Leaflet.js** -It is completely free and open source!
 
 - ✅ **No API key required**
 - ✅ **No billing setup needed**
