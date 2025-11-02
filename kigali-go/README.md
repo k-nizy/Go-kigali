@@ -11,6 +11,14 @@ A comprehensive public transportation solution for Kigali, providing real-time t
 - 📱 Mobile-friendly Progressive Web App (PWA)
 - 🛡️ Safety reporting and feedback system
 
+## ✨ Key Features
+
+- **Real-time Tracking** - Live vehicle locations on interactive maps
+- **Route Planning** - Find the best routes across different transport modes
+- **Fare Estimation** - Get accurate fare estimates before your trip
+- **User Accounts** - Save favorite routes and payment methods
+- **Mobile-Friendly** - Works great on all devices
+
 ## 🚀 Quick Start
 
 ### Prerequisites
