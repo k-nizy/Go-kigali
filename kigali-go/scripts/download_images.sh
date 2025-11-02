@@ -126,3 +126,4 @@ fi
 
 echo ""
 echo -e "${BLUE}Script completed!${NC}"
+
