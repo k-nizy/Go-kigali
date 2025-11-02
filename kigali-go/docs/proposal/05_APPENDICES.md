@@ -17,7 +17,7 @@
 4. Timeline planning
 
 **Key Decisions:**
-- Selected KigaliGo concept focusing on passenger-first transport app
+- Selected the KigaliGo concept focusing on a passenger-first transport app
 - Agreed on Agile development methodology
 - Assigned roles: Project Manager, Frontend Lead, Database Architect, QA Lead
 - Set up GitHub repository and communication channels (WhatsApp, Discord)
