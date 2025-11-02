@@ -5,8 +5,8 @@
 ### Root Causes:
 1. **GPS Takes Time**: High-accuracy GPS can take 10-30 seconds to get a fix
 2. **Indoor Location**: GPS doesn't work well indoors
-3. **Cold Start**: First GPS request after device boot is slowest
-4. **Network Issues**: Some devices rely on network for location
+3. **Cold Start**: First GPS request after device boot is the slowest
+4. **Network Issues**: Some devices rely on the network for location
 5. **Browser Caching**: Browser wasn't using cached location
 
 ## The Solution
@@ -16,11 +16,11 @@
 We now use a **two-tier approach**:
 
 #### 1. **Fast Initial Location** (Network-Based)
-```javascript
+```JavaScript
 {
   enableHighAccuracy: false,  // Use network/WiFi, not GPS
   timeout: 5000,              // Only wait 5 seconds
-  maximumAge: 60000           // Accept location cached within last minute
+  maximumAge: 60000           // Accept location cached within the last minute
 }
 ```
 
@@ -32,7 +32,7 @@ We now use a **two-tier approach**:
 - ✅ Uses cached location if available
 
 #### 2. **Continuous Tracking** (Background)
-```javascript
+```JavaScript
 watchPosition({
   enableHighAccuracy: false,
   timeout: 20000,             // Very lenient 20 seconds
@@ -41,15 +41,15 @@ watchPosition({
 ```
 
 **Why this works:**
-- ✅ Runs in background, doesn't block UI
+- ✅ Runs in the background, doesn't block UI
 - ✅ Updates location when available
 - ✅ Errors are completely silent
-- ✅ Doesn't spam user with messages
+- ✅ Doesn't spam the user with messages
 
 ## What Changed
 
 ### Before (Problematic):
-```javascript
+```JavaScript
 enableHighAccuracy: true,   // ❌ Requires GPS satellite fix
 timeout: 10000,             // ❌ Too short for GPS
 maximumAge: 0               // ❌ Never uses cache
@@ -58,7 +58,7 @@ maximumAge: 0               // ❌ Never uses cache
 **Result:** Frequent timeouts, especially indoors
 
 ### After (Fixed):
-```javascript
+```JavaScript
 enableHighAccuracy: false,  // ✅ Uses fast network location
 timeout: 5000,              // ✅ Short but realistic
 maximumAge: 60000           // ✅ Uses cached location
@@ -105,22 +105,22 @@ maximumAge: 60000           // ✅ Uses cached location
 ✅ Location obtained: {lat: -1.9441, lng: 30.0619}
 📍 Location updated: ...
 ```
-- Map centers on user
+- Map centers on the user
 - Shows nearby vehicles
 - No errors
 
 **Scenario 2: Location Fails**
 ```
-Fast location failed, using default
+Fast location failed, using the default
 ```
-- Map shows Kigali center
+- The map shows the Kigali center
 - Shows vehicles in Kigali
 - No error messages
 - App still works perfectly
 
 **Scenario 3: Manual Refresh**
-- Click "Current Location" button
-- Either updates or silently keeps current view
+- Click the "Current Location" button
+- Either updates or silently keeps the current view
 - No timeout errors
 
 ## Testing Results
