@@ -82,7 +82,7 @@
    - Saves 18 min average per trip
 
 2. **Real-Time Tracking**
-   - Live vehicle locations on map
+   - Live vehicle locations on the map
    - Accurate ETAs
    - Reduces wait anxiety
 
