@@ -1,6 +1,6 @@
 # 📍 Location Services Guide - KigaliGo
 
-## Current Implementation: Browser Geolocation API
+## The Current Implementation: Browser Geolocation API
 
 We're using the **HTML5 Geolocation API** which is:
 - ✅ **Free** - No API key needed
