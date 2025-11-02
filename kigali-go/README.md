@@ -19,6 +19,16 @@ A comprehensive public transportation solution for Kigali, providing real-time t
 - **User Accounts** - Save favorite routes and payment methods
 - **Mobile-Friendly** - Works great on all devices
 
+## 📚 API Documentation
+
+Our API provides endpoints for:
+- `GET /api/vehicles` - List all active vehicles
+- `GET /api/routes` - Get available routes
+- `POST /api/trips` - Create a new trip
+- `GET /api/fare` - Estimate trip fare
+
+For detailed API documentation, visit our [API Docs](https://github.com/k-nizy/Go-kigali/wiki/API-Documentation).
+
 ## 🚀 Quick Start
 
 ### Prerequisites
