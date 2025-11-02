@@ -1,6 +1,6 @@
 # Dark Mode Improvements - KigaliGo
 
-## Overview
+## The Overview
 Comprehensive dark mode enhancements applied across all pages to improve user experience and readability.
 
 ## Changes Made
