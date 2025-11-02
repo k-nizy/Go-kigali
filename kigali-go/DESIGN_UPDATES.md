@@ -1,6 +1,6 @@
 # KigaliGo Design Updates
 
-## Overview
+## The Overview
 This document outlines the major design enhancements made to the KigaliGo transport app to improve user experience and visual appeal.
 
 ## 🎨 New Visual Assets Created
