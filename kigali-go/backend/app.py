@@ -11,11 +11,18 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.exceptions import HTTPException
 import logging
+import os
+import sys
+
+# Add the backend directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db
 from api.routes import api_bp
 from api.auth import auth_bp
 from api.admin import admin_bp
+from utils.error_handlers import register_error_handlers, APIError, ValidationError, \
+    AuthenticationError, AuthorizationError, ResourceNotFoundError, InternalServerError
 
 def create_app():
     """Application factory pattern"""
@@ -46,23 +53,8 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
     
-    # Error handlers
-    @app.errorhandler(HTTPException)
-    def handle_http_exception(e):
-        return jsonify({
-            'error': e.name,
-            'message': e.description,
-            'status_code': e.code
-        }), e.code
-    
-    @app.errorhandler(Exception)
-    def handle_exception(e):
-        app.logger.error(f'Unhandled exception: {str(e)}')
-        return jsonify({
-            'error': 'Internal Server Error',
-            'message': 'An unexpected error occurred',
-            'status_code': 500
-        }), 500
+    # Register error handlers
+    register_error_handlers(app)
     
     # Health check endpoint
     @app.route('/health')

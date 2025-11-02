@@ -1,14 +1,23 @@
-# KigaliGo - Passenger-First Transport App
+# 🚍 KigaliGo - Smart Urban Mobility Platform
 
-A Progressive Web App (PWA) for Kigali passengers to plan trips, estimate fares, view nearby buses/taxis on a map, and report safety/feedback.
+A comprehensive public transportation solution for Kigali, providing real-time tracking, route planning, and fare estimation to improve urban mobility.
+
+## ✨ Features
+
+- 🗺️ Real-time vehicle tracking on interactive maps
+- 🚌 Multi-modal trip planning (buses, taxis, walking)
+- 💰 Accurate fare estimation before booking
+- 🚏 Nearby stops and vehicle locations
+- 📱 Mobile-friendly Progressive Web App (PWA)
+- 🛡️ Safety reporting and feedback system
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+ and npm
-- Python 3.10+
-- PostgreSQL 13+
-- Git
+- Node.js 18+ and npm 9+
+- Python 3.10+ with pip
+- PostgreSQL 14+ with PostGIS extension
+- Git 2.30+
 
 ### Local Development Setup
 
