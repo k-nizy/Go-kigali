@@ -1,6 +1,6 @@
 # 📍 Location Setup Guide - KigaliGo
 
-## Issue: "Unable to get location. Using map center."
+## Issue: "Unable to get the location. Using map center."
 
 This message appears when your browser blocks location access. Follow the steps below to fix it.
 
