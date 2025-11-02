@@ -16,7 +16,7 @@
 
 7. **African Technology Foundation.** (2023). *Mobile app adoption and user behavior in Sub-Saharan Africa.* Nairobi: ATF Research.
 
-8. **AC Group Rwanda.** (2023). *Tap&Go system implementation and impact report.* Kigali: AC Group.
+8. **AC Group Rwanda.** (2023). *Tap&Go system implementation and impact report.* Kigali: AC Group Rwanda.
 
 9. **Rwanda ICT Chamber.** (2024). *Innovation showcase participants report.* Kigali: Rwanda ICT Chamber.
 
