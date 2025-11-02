@@ -137,7 +137,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🎯 Roadmap
+## 🎯 Go-kigali Roadmap
 
 - [ ] Real-time vehicle tracking integration
 - [ ] Mobile app (React Native)
