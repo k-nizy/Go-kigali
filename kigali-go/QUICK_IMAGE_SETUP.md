@@ -1,49 +1,49 @@
 # Quick Image Setup - Use Real Photos
 
-## 🚀 **Fast Track: Get Professional Images in 10 Minutes**
+## 🚀 Fast Track: Get Professional Images in 10 Minutes
 
-### **Step 1: Download These Specific Images** (5 minutes)
+### Step 1: Download These Specific Images (5 minutes)
 
-#### **1. Hero Image - Kigali Cityscape**
+#### 1. Hero Image - Kigali Cityscape
 Visit: https://unsplash.com/s/photos/kigali
 - Download any modern cityscape photo (1920x1080)
 - Save as: `hero-illustration.jpg`
 
-**Alternative Search Terms:**
+**Alternative Search Terms:
 - "Rwanda city"
 - "African modern city"
 - "Urban africa buildings"
 
-#### **2. Bus Photo**
+#### 2. Bus Photo
 Visit: https://www.pexels.com/search/public%20bus/
 - Download side view of modern bus
 - Save as: `transport-bus.jpg`
 
-#### **3. Motorcycle Taxi**
+#### 3. Motorcycle Taxi
 Visit: https://www.pexels.com/search/motorcycle%20taxi/
 - Download motorcycle with rider
 - Save as: `transport-moto.jpg`
 
 **Alternative**: Search "boda boda" or "moto taxi africa"
 
-#### **4. Taxi Car**
+#### 4. Taxi Car
 Visit: https://unsplash.com/s/photos/taxi
 - Download green or white taxi
 - Save as: `transport-taxi.jpg`
 
-#### **5. Phone with Map**
+#### 5. Phone with Map
 Visit: https://unsplash.com/s/photos/phone-map
 - Download hand holding phone with navigation
 - Save as: `route-planning.jpg`
 
-#### **6. Mobile Payment**
+#### 6. Mobile Payment
 Visit: https://www.pexels.com/search/mobile%20payment/
 - Download phone showing payment interface
 - Save as: `fare-calculator.jpg`
 
 ---
 
-### **Step 2: Optimize Images** (3 minutes)
+### Step 2: Optimize Images (3 minutes)
 
 1. Go to: https://tinypng.com/
 2. Upload all 6 images
@@ -52,7 +52,7 @@ Visit: https://www.pexels.com/search/mobile%20payment/
 
 ---
 
-### **Step 3: Replace Files** (2 minutes)
+### Step 3: Replace Files (2 minutes)
 
 ```bash
 # Navigate to images folder
@@ -74,7 +74,7 @@ mv *.svg old_svgs/ 2>/dev/null || true
 
 ---
 
-### **Step 4: Update Code to Use JPG** (if needed)
+### Step 4: Update Code to Use JPG (if needed)
 
 If images don't show up, update extensions in your components:
 
@@ -93,17 +93,17 @@ find . -name "*.js" -exec sed -i 's/\.svg/.jpg/g' {} \;
 
 ---
 
-## 🎨 **Even Better: Use Professional Illustration Pack**
+## 🎨 Even Better: Use Professional Illustration Pack
 
-### **Option: unDraw (My Recommendation)**
+### Option: unDraw (My Recommendation)
 
-**Why?**
+Why?
 - ✅ Consistent modern style
 - ✅ Small file sizes (SVG)
 - ✅ Customizable colors
 - ✅ Free commercial use
 
-**How to Use:**
+How to Use:
 
 1. Visit: https://undraw.co/illustrations
 2. Set primary color to: `#3B82F6` (KigaliGo blue)
@@ -124,7 +124,7 @@ find . -name "*.js" -exec sed -i 's/\.svg/.jpg/g' {} \;
 
 ---
 
-## ⚡ **Ultra-Fast: Use What I Created**
+## ⚡ Ultra-Fast: Use What I Created
 
 I've already created a modern hero image for you:
 
@@ -139,15 +139,15 @@ It's optimized, modern, and loads instantly!
 
 ---
 
-## 🔍 **My Top Recommendation**
+## 🔍 My Top Recommendation
 
-### **Use This Combo:**
+### Use This Combo:
 
 1. **Hero**: Real Kigali photo from Unsplash
 2. **Transport modes**: Keep current SVGs (they're good)
 3. **Features**: Use unDraw illustrations
 
-**Why?**
+Why?
 - Authentic (real Kigali photo)
 - Fast loading (SVGs for icons)
 - Professional (consistent illustrations)
@@ -155,7 +155,7 @@ It's optimized, modern, and loads instantly!
 
 ---
 
-## 📊 **Compare Loading Times**
+## 📊 Compare Loading Times
 
 | Image Type | File Size | Load Time | Quality |
 |------------|-----------|-----------|---------|
@@ -164,11 +164,11 @@ It's optimized, modern, and loads instantly!
 | Uncompressed JPG | 2-5MB | 2-5s | ⭐⭐⭐⭐⭐ |
 | unDraw SVG | 10-30KB | < 100ms | ⭐⭐⭐⭐ |
 
-**Recommendation**: Use optimized JPG (< 500KB) or SVG
+Recommendation: Use optimized JPG (< 500KB) or SVG
 
 ---
 
-## ✅ **Checklist**
+## ✅ Checklist
 
 - [ ] Downloaded images from Unsplash/Pexels
 - [ ] Compressed images using TinyPNG
