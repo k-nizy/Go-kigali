@@ -4,7 +4,7 @@ Since I cannot download images directly, here's exactly what YOU need to do:
 
 ## 📋 **Quick Checklist (15 minutes total)**
 
-- [ ] Download 6 images from provided links
+- [ ] Download 6 images from the provided links
 - [ ] Compress images using TinyPNG
 - [ ] Move to correct folder
 - [ ] Update file extensions in code
