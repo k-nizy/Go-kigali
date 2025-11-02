@@ -2,9 +2,9 @@
 
 ## 3.1 Introduction
 
-The development of KigaliGo employs a mixed-methods research approach. **Qualitative methods** include semi-structured interviews with 20 regular commuters, observation studies at bus terminals (Nyabugogo, Kimironko), and focus groups with diverse user profiles. **Quantitative methods** comprise structured surveys of 100+ passengers measuring trip planning time, fare estimation accuracy, and usability testing with System Usability Scale (SUS) scoring.
+The development of KigaliGo employs a mixed-methods research approach. **Qualitative methods** include semi-structured interviews with 20 regular commuters, observation studies at bus terminals (Nyabugogo, Kimironko), and focus groups with diverse user profiles. **Quantitative methods** comprise structured surveys of 100+ passengers, measuring trip planning time, fare estimation accuracy, and usability testing using the System Usability Scale (SUS) scoring.
 
-The software development follows an **Agile methodology** with two-week sprints, daily standups, and continuous integration. This iterative approach allows rapid prototyping and user feedback incorporation.
+The software development follows an **Agile methodology** with two-week sprints, daily standups, and continuous integration. This iterative approach enables rapid prototyping and the incorporation of user feedback.
 
 ## 3.2 Development Model
 
