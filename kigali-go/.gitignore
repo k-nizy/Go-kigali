@@ -1,4 +1,4 @@
-# Environment variables (IMPORTANT: Protects API keys)
+# Environment variables (IMPORTANT: To protects API keys)
 .env
 .env.local
 .env.development.local
