@@ -50,7 +50,6 @@ const PlanTripPage = () => {
 
     setLoading(true);
     try {
-      // Try API first
       const response = await fetch('/api/v1/routes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,67 +61,11 @@ const PlanTripPage = () => {
         setRoutes(data.routes || []);
         toast.success('Routes found!');
       } else {
-        // Fallback to mock data if API fails
-        const mockRoutes = [
-          {
-            vehicle_type: 'bus',
-            route_number: '101',
-            fare: 500,
-            duration: '15-20',
-            distance: '5.2',
-            stops: [origin, 'Nyabugogo', destination],
-          },
-          {
-            vehicle_type: 'taxi',
-            route_number: 'Direct',
-            fare: 1200,
-            duration: '10-15',
-            distance: '5.2',
-            stops: [origin, destination],
-          },
-          {
-            vehicle_type: 'moto',
-            route_number: 'Express',
-            fare: 800,
-            duration: '8-12',
-            distance: '5.2',
-            stops: [origin, destination],
-          },
-        ];
-        setRoutes(mockRoutes);
-        toast.success('Routes found!');
+        toast.error('Could not find routes');
       }
     } catch (error) {
       console.error('Error planning trip:', error);
-      // Use mock data on error
-      const mockRoutes = [
-        {
-          vehicle_type: 'bus',
-          route_number: '101',
-          fare: 500,
-          duration: '15-20',
-          distance: '5.2',
-          stops: [origin, 'Nyabugogo', destination],
-        },
-        {
-          vehicle_type: 'taxi',
-          route_number: 'Direct',
-          fare: 1200,
-          duration: '10-15',
-          distance: '5.2',
-          stops: [origin, destination],
-        },
-        {
-          vehicle_type: 'moto',
-          route_number: 'Express',
-          fare: 800,
-          duration: '8-12',
-          distance: '5.2',
-          stops: [origin, destination],
-        },
-      ];
-      setRoutes(mockRoutes);
-      toast.success('Routes found!');
+      toast.error('Error planning trip');
     } finally {
       setLoading(false);
     }
