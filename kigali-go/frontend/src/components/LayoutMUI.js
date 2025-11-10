@@ -20,7 +20,6 @@ import {
   useTheme,
   Avatar,
   Divider,
-  Tooltip,
 } from '@mui/material';
 import {
   Home,
@@ -31,10 +30,7 @@ import {
   Menu as MenuIcon,
   Language,
   DirectionsBus,
-  LightMode,
-  DarkMode,
 } from '@mui/icons-material';
-import { useThemeMode } from '../ThemeContext';
 
 const drawerWidth = 240;
 
@@ -43,7 +39,6 @@ const LayoutMUI = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { mode, toggleTheme } = useThemeMode();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langAnchorEl, setLangAnchorEl] = useState(null);
@@ -76,13 +71,7 @@ const LayoutMUI = ({ children }) => {
   const isActive = (path) => location.pathname === path;
 
   const drawer = (
-    <Box sx={{ 
-      height: '100%', 
-      bgcolor: mode === 'dark' ? '#000' : '#FFFFFF',
-      display: 'flex', 
-      flexDirection: 'column',
-      borderRight: mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.12)',
-    }}>
+    <Box sx={{ height: '100%', bgcolor: '#000', display: 'flex', flexDirection: 'column' }}>
       {/* Logo */}
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
@@ -96,13 +85,13 @@ const LayoutMUI = ({ children }) => {
           >
             <DirectionsBus />
           </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
             {t('app.name')}
           </Typography>
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)' }} />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
       {/* Navigation */}
       <List sx={{ px: 2, pt: 2 }}>
@@ -115,15 +104,11 @@ const LayoutMUI = ({ children }) => {
               }}
               sx={{
                 borderRadius: 1,
-                color: isActive(item.path) 
-                  ? (mode === 'dark' ? '#fff' : '#0D7377')
-                  : (mode === 'dark' ? '#b3b3b3' : '#6B7280'),
-                bgcolor: isActive(item.path) 
-                  ? (mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(13,115,119,0.1)')
-                  : 'transparent',
+                color: isActive(item.path) ? '#fff' : '#b3b3b3',
+                bgcolor: isActive(item.path) ? 'rgba(255,255,255,0.1)' : 'transparent',
                 '&:hover': {
-                  bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(13,115,119,0.08)',
-                  color: mode === 'dark' ? '#fff' : '#0D7377',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  color: '#fff',
                 },
                 transition: 'all 0.2s',
               }}
@@ -144,36 +129,18 @@ const LayoutMUI = ({ children }) => {
       </List>
 
       {/* Bottom section */}
-      <Box sx={{ mt: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'} placement="right">
-          <Button
-            fullWidth
-            startIcon={mode === 'dark' ? <LightMode /> : <DarkMode />}
-            onClick={toggleTheme}
-            sx={{
-              color: mode === 'dark' ? '#b3b3b3' : '#6B7280',
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              '&:hover': {
-                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                color: mode === 'dark' ? '#fff' : '#1A1A1A',
-              },
-            }}
-          >
-            {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </Button>
-        </Tooltip>
+      <Box sx={{ mt: 'auto', p: 2 }}>
         <Button
           fullWidth
           startIcon={<Language />}
           onClick={handleLanguageClick}
           sx={{
-            color: mode === 'dark' ? '#b3b3b3' : '#6B7280',
+            color: '#b3b3b3',
             justifyContent: 'flex-start',
             textTransform: 'none',
             '&:hover': {
-              bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-              color: mode === 'dark' ? '#fff' : '#1A1A1A',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              color: '#fff',
             },
           }}
         >
