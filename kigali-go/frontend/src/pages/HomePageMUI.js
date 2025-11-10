@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useThemeMode } from '../ThemeContext';
 import {
   Box,
   Container,
@@ -35,7 +34,6 @@ import { toast } from 'react-hot-toast';
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { mode } = useThemeMode();
   const [stats, setStats] = useState({
     vehicles: 0,
     zones: 0,
@@ -94,7 +92,7 @@ const HomePage = () => {
       title: 'Live Map',
       description: 'Track vehicles in real-time',
       route: '/map',
-      color: '#0D7377',
+      color: '#1DB954',
     },
     {
       icon: <Calculate />,
@@ -114,10 +112,10 @@ const HomePage = () => {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 8 }}>
-      {/* Hero Section - Modern Teal Style */}
+      {/* Hero Section - Spotify Style */}
       <Box
         sx={{
-          background: 'linear-gradient(180deg, #0D7377 0%, #121212 100%)',
+          background: 'linear-gradient(180deg, #1DB954 0%, #121212 100%)',
           pt: 8,
           pb: 12,
           position: 'relative',
@@ -155,14 +153,14 @@ const HomePage = () => {
               startIcon={<PlayArrow />}
               onClick={() => navigate('/map')}
               sx={{
-                bgcolor: mode === 'dark' ? '#fff' : '#0D7377',
-                color: mode === 'dark' ? '#000' : '#fff',
+                bgcolor: '#fff',
+                color: '#000',
                 px: 4,
                 py: 1.5,
                 fontSize: '1rem',
                 fontWeight: 700,
                 '&:hover': {
-                  bgcolor: mode === 'dark' ? '#f0f0f0' : '#0A5A5D',
+                  bgcolor: '#f0f0f0',
                   transform: 'scale(1.04)',
                 },
               }}
@@ -173,64 +171,40 @@ const HomePage = () => {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: -6 }}>
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {[
             { icon: <DirectionsBus />, label: 'Active Vehicles', value: stats.vehicles, color: '#2E77D0' },
-            { icon: <LocationOn />, label: 'Service Zones', value: stats.zones, color: '#0D7377' },
+            { icon: <LocationOn />, label: 'Service Zones', value: stats.zones, color: '#1DB954' },
             { icon: <People />, label: 'Daily Trips', value: stats.trips || '1,200+', color: '#FFA726' },
           ].map((stat, index) => (
             <Grid item xs={12} md={4} key={index}>
               {loading ? (
-                <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
+                <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
               ) : (
                 <Paper
-                  elevation={mode === 'dark' ? 0 : 2}
+                  elevation={0}
                   sx={{
                     p: 3,
                     bgcolor: 'background.paper',
                     borderRadius: 2,
                     transition: 'all 0.3s',
-                    border: mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.08)',
                     '&:hover': {
-                      bgcolor: mode === 'dark' ? '#282828' : '#F9FAFB',
+                      bgcolor: '#282828',
                       transform: 'translateY(-4px)',
-                      boxShadow: mode === 'dark' 
-                        ? 'none' 
-                        : '0 8px 24px rgba(0,0,0,0.12)',
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Avatar 
-                      sx={{ 
-                        bgcolor: stat.color, 
-                        mr: 2,
-                        width: 56,
-                        height: 56,
-                      }}
-                    >
+                    <Avatar sx={{ bgcolor: stat.color, mr: 2 }}>
                       {stat.icon}
                     </Avatar>
                     <Box>
-                      <Typography 
-                        variant="h4" 
-                        sx={{ 
-                          fontWeight: 700, 
-                          color: mode === 'dark' ? '#fff' : '#1A1A1A',
-                          mb: 0.5,
-                        }}
-                      >
+                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
                         {stat.value}
                       </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: 'text.secondary',
-                          fontWeight: 500,
-                        }}
-                      >
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                         {stat.label}
                       </Typography>
                     </Box>
@@ -243,11 +217,11 @@ const HomePage = () => {
 
         {/* Transport Modes Section */}
         <Box sx={{ mb: 6 }}>
-          <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+          <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#fff' }}>
             Choose Your Ride
           </Typography>
           <Grid container spacing={3}>
-            {transportModes.map((transportMode, index) => (
+            {transportModes.map((mode, index) => (
               <Grid item xs={12} md={4} key={index}>
                 <Card
                   sx={{
@@ -258,33 +232,33 @@ const HomePage = () => {
                     transition: 'all 0.3s',
                     cursor: 'pointer',
                     '&:hover': {
-                      bgcolor: mode === 'dark' ? '#282828' : '#F9FAFB',
+                      bgcolor: '#282828',
                       transform: 'translateY(-8px)',
                     },
                   }}
-                  onClick={() => navigate(transportMode.route)}
+                  onClick={() => navigate(mode.route)}
                 >
                   <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 4 }}>
                     <Box
                       sx={{
-                        color: transportMode.color,
+                        color: mode.color,
                         mb: 2,
                         display: 'flex',
                         justifyContent: 'center',
                       }}
                     >
-                      {transportMode.icon}
+                      {mode.icon}
                     </Box>
-                    <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                      {transportMode.title}
+                    <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: '#fff' }}>
+                      {mode.title}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-                      {transportMode.description}
+                      {mode.description}
                     </Typography>
                     <Chip
-                      label={`Starting at ${transportMode.price}`}
+                      label={`Starting at ${mode.price}`}
                       sx={{
-                        bgcolor: transportMode.color,
+                        bgcolor: mode.color,
                         color: '#fff',
                         fontWeight: 600,
                       }}
@@ -293,7 +267,7 @@ const HomePage = () => {
                   <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
                     <Button
                       endIcon={<ArrowForward />}
-                      sx={{ color: transportMode.color, fontWeight: 600 }}
+                      sx={{ color: mode.color, fontWeight: 600 }}
                     >
                       Book Now
                     </Button>
@@ -306,27 +280,22 @@ const HomePage = () => {
 
         {/* Quick Actions */}
         <Box>
-          <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+          <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#fff' }}>
             Quick Actions
           </Typography>
           <Grid container spacing={3}>
             {quickActions.map((action, index) => (
               <Grid item xs={12} md={4} key={index}>
                 <Paper
-                  elevation={mode === 'dark' ? 0 : 2}
                   sx={{
                     p: 3,
                     bgcolor: 'background.paper',
                     borderRadius: 2,
                     cursor: 'pointer',
                     transition: 'all 0.3s',
-                    border: mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.08)',
                     '&:hover': {
-                      bgcolor: mode === 'dark' ? '#282828' : '#F9FAFB',
+                      bgcolor: '#282828',
                       transform: 'translateY(-4px)',
-                      boxShadow: mode === 'dark' 
-                        ? 'none' 
-                        : '0 8px 24px rgba(0,0,0,0.12)',
                     },
                   }}
                   onClick={() => navigate(action.route)}
@@ -343,7 +312,7 @@ const HomePage = () => {
                       {action.icon}
                     </Avatar>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+                      <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600, color: '#fff' }}>
                         {action.title}
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
