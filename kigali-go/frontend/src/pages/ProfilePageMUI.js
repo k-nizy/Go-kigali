@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -15,13 +14,6 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import {
   Person,
@@ -36,50 +28,26 @@ import {
   DirectionsBus,
   Star,
 } from '@mui/icons-material';
-import { toast } from 'react-hot-toast';
 import { useThemeMode } from '../ThemeContext';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
-  const { mode, toggleTheme } = useThemeMode();
-  const navigate = useNavigate();
-  const [user, setUser] = useState({
-    name: 'Qelly Kaze',
-    email: 'qellyka@example.com',
+  const { mode } = useThemeMode();
+  const [user] = useState({
+    name: 'John Doe',
+    email: 'john.doe@example.com',
     phone: '+250 788 123 456',
     location: 'Kigali, Rwanda',
     memberSince: 'January 2024',
     totalTrips: 45,
     favoriteRoute: 'Nyabugogo - Kimironko',
   });
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [tripsDialogOpen, setTripsDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ ...user });
 
   const recentTrips = [
-    { id: 1, from: 'Nyabugogo', to: 'Kimironko', date: '2024-11-01', fare: '500 RWF', time: '08:30 AM' },
-    { id: 2, from: 'City Center', to: 'Remera', date: '2024-10-30', fare: '400 RWF', time: '02:15 PM' },
-    { id: 3, from: 'Kacyiru', to: 'Gikondo', date: '2024-10-28', fare: '600 RWF', time: '05:45 PM' },
-    { id: 4, from: 'Kimironko', to: 'Nyabugogo', date: '2024-10-25', fare: '500 RWF', time: '09:00 AM' },
-    { id: 5, from: 'Remera', to: 'Kacyiru', date: '2024-10-22', fare: '350 RWF', time: '11:30 AM' },
+    { id: 1, from: 'Nyabugogo', to: 'Kimironko', date: '2024-11-01', fare: '500 RWF' },
+    { id: 2, from: 'City Center', to: 'Remera', date: '2024-10-30', fare: '400 RWF' },
+    { id: 3, from: 'Kacyiru', to: 'Gikondo', date: '2024-10-28', fare: '600 RWF' },
   ];
-
-  const handleEditProfile = () => {
-    setEditForm({ ...user });
-    setEditDialogOpen(true);
-  };
-
-  const handleSaveProfile = () => {
-    setUser({ ...editForm });
-    setEditDialogOpen(false);
-    toast.success('Profile updated successfully!');
-  };
-
-  const handleLogout = () => {
-    toast.success('Logged out successfully!');
-    navigate('/');
-  };
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 4 }}>
@@ -178,7 +146,6 @@ const ProfilePage = () => {
                 variant="outlined"
                 fullWidth
                 startIcon={<Edit />}
-                onClick={handleEditProfile}
                 sx={{ mt: 2 }}
               >
                 Edit Profile
@@ -270,7 +237,6 @@ const ProfilePage = () => {
                 variant="outlined"
                 fullWidth
                 startIcon={<History />}
-                onClick={() => setTripsDialogOpen(true)}
                 sx={{ mt: 3 }}
               >
                 View All Trips
@@ -292,21 +258,21 @@ const ProfilePage = () => {
               </Typography>
 
               <List>
-                <ListItem button onClick={() => toast.info('Payment methods coming soon!')}>
+                <ListItem button>
                   <ListItemIcon>
                     <Payment color="primary" />
                   </ListItemIcon>
                   <ListItemText primary="Payment Methods" />
                 </ListItem>
                 <Divider />
-                <ListItem button onClick={() => setSettingsDialogOpen(true)}>
+                <ListItem button>
                   <ListItemIcon>
                     <Settings color="primary" />
                   </ListItemIcon>
                   <ListItemText primary="App Settings" />
                 </ListItem>
                 <Divider />
-                <ListItem button onClick={handleLogout}>
+                <ListItem button>
                   <ListItemIcon>
                     <Logout sx={{ color: '#E22134' }} />
                   </ListItemIcon>
@@ -317,122 +283,6 @@ const ProfilePage = () => {
           </Grid>
         </Grid>
       </Container>
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              label="Name"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="Phone"
-              value={editForm.phone}
-              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="Location"
-              value={editForm.location}
-              onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-              fullWidth
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveProfile} variant="contained">Save</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* All Trips Dialog */}
-      <Dialog open={tripsDialogOpen} onClose={() => setTripsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>All Trips</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            {recentTrips.map((trip) => (
-              <Paper
-                key={trip.id}
-                elevation={0}
-                sx={{
-                  p: 2,
-                  bgcolor: mode === 'dark' ? '#282828' : '#F9FAFB',
-                  borderRadius: 1,
-                  border: mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.08)',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      <DirectionsBus />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        {trip.from} → {trip.to}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {trip.date} at {trip.time}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Chip label={trip.fare} color="primary" />
-                </Box>
-              </Paper>
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTripsDialogOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* App Settings Dialog */}
-      <Dialog open={settingsDialogOpen} onClose={() => setSettingsDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>App Settings</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={mode === 'dark'}
-                  onChange={toggleTheme}
-                  color="primary"
-                />
-              }
-              label="Dark Mode"
-            />
-            <Divider />
-            <Typography variant="subtitle2" sx={{ mt: 2 }}>
-              Notifications
-            </Typography>
-            <FormControlLabel
-              control={<Switch defaultChecked color="primary" />}
-              label="Trip Updates"
-            />
-            <FormControlLabel
-              control={<Switch defaultChecked color="primary" />}
-              label="Promotional Offers"
-            />
-            <FormControlLabel
-              control={<Switch color="primary" />}
-              label="Email Notifications"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSettingsDialogOpen(false)} variant="contained">Done</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
