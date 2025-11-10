@@ -14,6 +14,13 @@
   "home": {
     "welcome": "Murakaza neza kuri KigaliGo",
     "subtitle": "Umugenzi wawe w'ingendo mu Kigali",
+    "startJourney": "Tangira Urugendo",
+    "chooseRide": "Hitamo Uburyo bwo Kugenda",
+    "transportModes": {
+      "bus": "Ingendo z'abantu benshi zihenze mu Kigali",
+      "moto": "Ingendo zihuse zinyura mu modoka nyinshi",
+      "taxi": "Ingendo zoroshye z'inzira ndende"
+    },
     "quickActions": {
       "planTrip": "Tegura Urugendo",
       "viewMap": "Reba Ikarita",
@@ -50,6 +57,7 @@
     "title": "Ikarita y'Ibinyabiziga mu Gihe Nyacyo",
     "loading": "Ikarita irapakirwa...",
     "noLocation": "Dukeneye kumenya aho uri kugira ngo tugaragaze ibinyabiziga biri hafi yawe",
+    "showingVehicles": "Tugaragaza ibinyabiziga biri hafi yawe",
     "enableLocation": "Emera Kumenya Aho Uri",
     "legend": {
       "title": "Ibisobanuro",
@@ -120,8 +128,11 @@
   },
   "reports": {
     "title": "Tanga Raporo",
+    "subtitle": "Dufashe kunoza serivisi yacu utanga raporo y'ibibazo",
     "newReport": "Raporo Nshya",
     "type": "Ubwoko bwa Raporo",
+    "locationPlaceholder": "Urugero: Sitasiyo ya Bisi ya Nyabugogo",
+    "descriptionPlaceholder": "Nyamuneka sobanura ikibazo mu buryo burambuye...",
     "types": {
       "overcharge": "Kwishyurwa Byinshi",
       "safety": "Ikibazo cy'Umutekano",
@@ -141,6 +152,7 @@
   },
   "profile": {
     "title": "Umwirondoro",
+    "memberSince": "Umunyamuryango kuva",
     "personalInfo": "Amakuru Bwite",
     "name": "Amazina",
     "email": "Imeyili",

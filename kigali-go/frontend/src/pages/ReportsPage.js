@@ -32,11 +32,10 @@ const ReportsPage = () => {
   const [submitted, setSubmitted] = useState(false);
 
   const reportTypes = [
-    { value: 'vehicle_issue', label: 'Vehicle Issue' },
-    { value: 'route_problem', label: 'Route Problem' },
-    { value: 'driver_behavior', label: 'Driver Behavior' },
-    { value: 'safety_concern', label: 'Safety Concern' },
-    { value: 'other', label: 'Other' },
+    { value: 'overcharge', label: t('reports.types.overcharge') },
+    { value: 'safety', label: t('reports.types.safety') },
+    { value: 'service', label: t('reports.types.service') },
+    { value: 'other', label: t('reports.types.other') },
   ];
 
   const handleSubmit = async (e) => {
@@ -89,10 +88,10 @@ const ReportsPage = () => {
       >
         <Container maxWidth="lg">
           <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mb: 2 }}>
-            Report an Issue
+            {t('reports.title')}
           </Typography>
           <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-            Help us improve our service by reporting problems
+            {t('reports.subtitle') || 'Help us improve our service by reporting problems'}
           </Typography>
         </Container>
       </Box>
@@ -104,7 +103,7 @@ const ReportsPage = () => {
             severity="success"
             sx={{ mb: 3 }}
           >
-            Thank you! Your report has been submitted successfully.
+            {t('reports.success')}
           </Alert>
         )}
 
@@ -119,7 +118,7 @@ const ReportsPage = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Report sx={{ fontSize: 32, color: 'primary.main', mr: 2 }} />
             <Typography variant="h5" sx={{ fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-              Submit a Report
+              {t('reports.newReport')}
             </Typography>
           </Box>
 
@@ -129,7 +128,7 @@ const ReportsPage = () => {
                 <TextField
                   select
                   fullWidth
-                  label="Report Type"
+                  label={t('reports.type')}
                   value={formData.type}
                   onChange={handleChange('type')}
                   required
@@ -145,10 +144,10 @@ const ReportsPage = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Location (Optional)"
+                  label={t('reports.location')}
                   value={formData.location}
                   onChange={handleChange('location')}
-                  placeholder="e.g., Nyabugogo Bus Station"
+                  placeholder={t('reports.locationPlaceholder') || 'e.g., Nyabugogo Bus Station'}
                 />
               </Grid>
 
@@ -157,10 +156,10 @@ const ReportsPage = () => {
                   fullWidth
                   multiline
                   rows={6}
-                  label="Description"
+                  label={t('reports.description')}
                   value={formData.description}
                   onChange={handleChange('description')}
-                  placeholder="Please describe the issue in detail..."
+                  placeholder={t('reports.descriptionPlaceholder') || 'Please describe the issue in detail...'}
                   required
                 />
               </Grid>
@@ -179,7 +178,7 @@ const ReportsPage = () => {
                     fontWeight: 600,
                   }}
                 >
-                  {loading ? 'Submitting...' : 'Submit Report'}
+                  {loading ? t('reports.submitting') : t('reports.submit')}
                 </Button>
               </Grid>
             </Grid>

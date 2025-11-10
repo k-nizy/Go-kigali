@@ -64,24 +64,24 @@ const HomePage = () => {
   const transportModes = [
     {
       icon: <DirectionsBus sx={{ fontSize: 60 }} />,
-      title: 'Bus (Tap&Go)',
-      description: 'Public transport with contactless payment',
+      title: t('fare.modes.bus'),
+      description: t('home.transportModes.bus') || 'Affordable public transport across Kigali',
       color: '#2E77D0',
-      price: '500 RWF',
+      price: '200-500 RWF',
       route: '/map',
     },
     {
       icon: <TwoWheeler sx={{ fontSize: 60 }} />,
-      title: 'Motorcycle Taxi',
-      description: 'Quick and affordable rides around the city',
+      title: t('fare.modes.moto'),
+      description: t('home.transportModes.moto') || 'Quick and flexible rides through traffic',
       color: '#FFA726',
-      price: '800 RWF',
+      price: '500-1,000 RWF',
       route: '/map',
     },
     {
       icon: <DirectionsCar sx={{ fontSize: 60 }} />,
-      title: 'Taxi',
-      description: 'Comfortable private rides for longer distances',
+      title: t('fare.modes.taxi'),
+      description: t('home.transportModes.taxi') || 'Comfortable private rides for longer distances',
       color: '#E22134',
       price: '1,200 RWF',
       route: '/map',
@@ -91,22 +91,22 @@ const HomePage = () => {
   const quickActions = [
     {
       icon: <MapIcon />,
-      title: 'Live Map',
-      description: 'Track vehicles in real-time',
+      title: t('home.quickActions.viewMap'),
+      description: t('home.features.realtime.description'),
       route: '/map',
       color: '#0D7377',
     },
     {
       icon: <Calculate />,
-      title: 'Fare Calculator',
-      description: 'Estimate your trip cost',
+      title: t('home.quickActions.estimateFare'),
+      description: t('fare.title'),
       route: '/fare-estimator',
       color: '#2E77D0',
     },
     {
       icon: <Report />,
-      title: 'Report Issue',
-      description: 'Help improve our service',
+      title: t('home.quickActions.reportIssue'),
+      description: t('reports.title'),
       route: '/reports',
       color: '#FFA726',
     },
@@ -147,7 +147,7 @@ const HomePage = () => {
                 fontWeight: 400,
               }}
             >
-              Your smart transport companion in Kigali
+              {t('home.subtitle')}
             </Typography>
             <Button
               variant="contained"
@@ -167,7 +167,7 @@ const HomePage = () => {
                 },
               }}
             >
-              Start Your Journey
+              {t('home.startJourney') || 'Start Your Journey'}
             </Button>
           </Box>
         </Container>
@@ -177,9 +177,9 @@ const HomePage = () => {
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {[
-            { icon: <DirectionsBus />, label: 'Active Vehicles', value: stats.vehicles, color: '#2E77D0' },
-            { icon: <LocationOn />, label: 'Service Zones', value: stats.zones, color: '#0D7377' },
-            { icon: <People />, label: 'Daily Trips', value: stats.trips || '1,200+', color: '#FFA726' },
+            { icon: <DirectionsBus />, label: t('home.stats.vehicles'), value: stats.vehicles, color: '#2E77D0' },
+            { icon: <LocationOn />, label: t('home.stats.zones'), value: stats.zones, color: '#0D7377' },
+            { icon: <People />, label: t('home.stats.trips'), value: stats.trips || '1,200+', color: '#FFA726' },
           ].map((stat, index) => (
             <Grid item xs={12} md={4} key={index}>
               {loading ? (
@@ -244,7 +244,7 @@ const HomePage = () => {
         {/* Transport Modes Section */}
         <Box sx={{ mb: 6 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-            Choose Your Ride
+            {t('home.chooseRide') || 'Choose Your Ride'}
           </Typography>
           <Grid container spacing={3}>
             {transportModes.map((transportMode, index) => (

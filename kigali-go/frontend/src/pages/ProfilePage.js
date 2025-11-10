@@ -112,7 +112,7 @@ const ProfilePage = () => {
                 {user.name}
               </Typography>
               <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                Member since {user.memberSince}
+                {t('profile.memberSince') || 'Member since'} {user.memberSince}
               </Typography>
             </Box>
           </Box>
@@ -132,7 +132,7 @@ const ProfilePage = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                Profile Information
+                {t('profile.personalInfo')}
               </Typography>
 
               <List>
@@ -288,7 +288,7 @@ const ProfilePage = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                Settings
+                {t('profile.settings')}
               </Typography>
 
               <List>

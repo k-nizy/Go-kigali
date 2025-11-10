@@ -104,10 +104,10 @@ const MapPage = () => {
       >
         <Container maxWidth="lg">
           <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mb: 2 }}>
-            Live Map
+            {t('map.title')}
           </Typography>
           <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-            {userLocation ? 'Showing vehicles near your location' : 'Enable location to see nearby vehicles'}
+            {userLocation ? t('map.showingVehicles') || 'Showing vehicles near your location' : t('map.noLocation')}
           </Typography>
         </Container>
       </Box>
@@ -203,7 +203,7 @@ const MapPage = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                Nearby Vehicles
+                {t('map.nearbyVehicles')}
               </Typography>
               
               {loading ? (

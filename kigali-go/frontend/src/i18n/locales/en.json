@@ -14,6 +14,13 @@
   "home": {
     "welcome": "Welcome to KigaliGo",
     "subtitle": "Your smart transport companion for Kigali",
+    "startJourney": "Start Your Journey",
+    "chooseRide": "Choose Your Ride",
+    "transportModes": {
+      "bus": "Affordable public transport across Kigali",
+      "moto": "Quick and flexible rides through traffic",
+      "taxi": "Comfortable private rides for longer distances"
+    },
     "quickActions": {
       "planTrip": "Plan a Trip",
       "viewMap": "View Map",
@@ -50,6 +57,7 @@
     "title": "Live Transport Map",
     "loading": "Loading map...",
     "noLocation": "Location access required to show nearby vehicles",
+    "showingVehicles": "Showing vehicles near your location",
     "enableLocation": "Enable Location",
     "legend": {
       "title": "Legend",
@@ -120,8 +128,11 @@
   },
   "reports": {
     "title": "Report an Issue",
+    "subtitle": "Help us improve our service by reporting problems",
     "newReport": "New Report",
     "type": "Report Type",
+    "locationPlaceholder": "e.g., Nyabugogo Bus Station",
+    "descriptionPlaceholder": "Please describe the issue in detail...",
     "types": {
       "overcharge": "Overcharge",
       "safety": "Safety Concern",
@@ -141,6 +152,7 @@
   },
   "profile": {
     "title": "Profile",
+    "memberSince": "Member since",
     "personalInfo": "Personal Information",
     "name": "Name",
     "email": "Email",
