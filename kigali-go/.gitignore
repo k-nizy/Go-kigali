@@ -3,6 +3,12 @@
 .env.*
 !.env.example
 
+# Dependencies
+node_modules/
+venv/
+env/
+Lib/
+
 # Python
 __pycache__/
 *.py[cod]
