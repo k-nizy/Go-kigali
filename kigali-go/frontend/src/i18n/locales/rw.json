@@ -68,12 +68,15 @@
   },
   "plan": {
     "title": "Tegura Urugendo Rwawe",
+    "subtitle": "Shakisha inzira nziza n'uburyo bwo kugenda",
+    "enterDetails": "Andika Amakuru y'Urugendo",
     "from": "Kuva",
     "to": "Kugeza",
     "currentLocation": "Koresha Aho Uri Ubu",
     "selectLocation": "Hitamo Ahantu",
     "searching": "Turashakisha inzira...",
     "noResults": "Nta nzira yabonetse. Gerageza ahantu hatandukanye.",
+    "popularDestinations": "Ahantu Hakunzwe",
     "routeOptions": {
       "title": "Amahitamo y'Inzira",
       "fastest": "Yihuse Cyane",

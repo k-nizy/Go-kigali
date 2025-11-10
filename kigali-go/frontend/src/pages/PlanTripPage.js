@@ -44,7 +44,7 @@ const PlanTripPage = () => {
 
   const handlePlanTrip = async () => {
     if (!origin || !destination) {
-      toast.error('Please enter both origin and destination');
+      toast.error(t('errors.validation'));
       return;
     }
 
@@ -60,7 +60,7 @@ const PlanTripPage = () => {
       if (response.ok) {
         const data = await response.json();
         setRoutes(data.routes || []);
-        toast.success('Routes found!');
+        toast.success(t('plan.searching'));
       } else {
         // Fallback to mock data if API fails
         const mockRoutes = [
@@ -90,7 +90,7 @@ const PlanTripPage = () => {
           },
         ];
         setRoutes(mockRoutes);
-        toast.success('Routes found!');
+        toast.success(t('plan.searching'));
       }
     } catch (error) {
       console.error('Error planning trip:', error);
@@ -122,7 +122,7 @@ const PlanTripPage = () => {
         },
       ];
       setRoutes(mockRoutes);
-      toast.success('Routes found!');
+      toast.success(t('plan.searching'));
     } finally {
       setLoading(false);
     }
@@ -166,10 +166,10 @@ const PlanTripPage = () => {
       >
         <Container maxWidth="lg">
           <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mb: 2 }}>
-            Plan Your Trip
+            {t('plan.title')}
           </Typography>
           <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-            Find the best routes and transportation options
+            {t('plan.subtitle') || 'Find the best routes and transportation options'}
           </Typography>
         </Container>
       </Box>
@@ -189,7 +189,7 @@ const PlanTripPage = () => {
               }}
             >
               <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                Enter Trip Details
+                {t('plan.enterDetails') || 'Enter Trip Details'}
               </Typography>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -202,8 +202,8 @@ const PlanTripPage = () => {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Starting Point"
-                      placeholder="Enter origin"
+                      label={t('plan.from')}
+                      placeholder={t('plan.selectLocation')}
                       InputProps={{
                         ...params.InputProps,
                         startAdornment: <LocationOn sx={{ mr: 1, color: '#0D7377' }} />,
@@ -234,8 +234,8 @@ const PlanTripPage = () => {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Destination"
-                      placeholder="Enter destination"
+                      label={t('plan.to')}
+                      placeholder={t('plan.selectLocation')}
                       InputProps={{
                         ...params.InputProps,
                         startAdornment: <Navigation sx={{ mr: 1, color: '#E22134' }} />,
@@ -256,14 +256,14 @@ const PlanTripPage = () => {
                     fontWeight: 600,
                   }}
                 >
-                  {loading ? 'Finding Routes...' : 'Plan Trip'}
+                  {loading ? t('plan.searching') : t('plan.title')}
                 </Button>
               </Box>
 
               {/* Popular Destinations */}
               <Box sx={{ mt: 4 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-                  Popular Destinations
+                  {t('plan.popularDestinations') || 'Popular Destinations'}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {popularLocations.slice(0, 6).map((location) => (
@@ -289,7 +289,7 @@ const PlanTripPage = () => {
             {routes.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                  Available Routes
+                  {t('plan.routeOptions.title')}
                 </Typography>
                 {routes.map((route, index) => (
                   <Card
@@ -328,7 +328,7 @@ const PlanTripPage = () => {
                             <AccessTime sx={{ fontSize: 20, color: 'text.secondary' }} />
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Duration
+                                {t('plan.tripDetails.duration')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                 {route.duration || '15-20'} min
@@ -341,7 +341,7 @@ const PlanTripPage = () => {
                             <LocationOn sx={{ fontSize: 20, color: 'text.secondary' }} />
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Distance
+                                {t('plan.tripDetails.distance')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                 {route.distance || '5.2'} km
@@ -354,7 +354,7 @@ const PlanTripPage = () => {
                       {route.stops && (
                         <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                           <Typography variant="caption" color="text.secondary">
-                            Stops: {route.stops.join(' → ')}
+                            {t('plan.tripDetails.steps')}: {route.stops.join(' → ')}
                           </Typography>
                         </Box>
                       )}
@@ -374,10 +374,10 @@ const PlanTripPage = () => {
               >
                 <Navigation sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  Plan your trip to see available routes
+                  {t('plan.noResults') || 'Plan your trip to see available routes'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Enter your starting point and destination to get started
+                  {t('plan.selectLocation')}
                 </Typography>
               </Paper>
             )}

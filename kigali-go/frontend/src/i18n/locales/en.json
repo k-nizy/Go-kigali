@@ -68,12 +68,15 @@
   },
   "plan": {
     "title": "Plan Your Trip",
+    "subtitle": "Find the best routes and transportation options",
+    "enterDetails": "Enter Trip Details",
     "from": "From",
     "to": "To",
     "currentLocation": "Use Current Location",
     "selectLocation": "Select Location",
     "searching": "Searching for routes...",
     "noResults": "No routes found. Try different locations.",
+    "popularDestinations": "Popular Destinations",
     "routeOptions": {
       "title": "Route Options",
       "fastest": "Fastest",
