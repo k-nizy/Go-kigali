@@ -16,8 +16,16 @@ echo Activating virtual environment...
 call venv\Scripts\activate.bat
 
 echo Installing/Updating dependencies...
-pip install -q -r requirements.txt
-if errorlevel 1 (
+if exist requirements-dev.txt (
+    echo Using requirements-dev.txt for local setup...
+    pip install -q -r requirements-dev.txt
+    set INSTALL_ERROR=%ERRORLEVEL%
+) else (
+    echo requirements-dev.txt not found. Falling back to requirements.txt...
+    pip install -q -r requirements.txt
+    set INSTALL_ERROR=%ERRORLEVEL%
+)
+if not "%INSTALL_ERROR%"=="0" (
     echo Error installing dependencies. Please check requirements.txt
     pause
     exit /b 1
