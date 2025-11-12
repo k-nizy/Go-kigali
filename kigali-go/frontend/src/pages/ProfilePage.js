@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -38,24 +38,43 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 import { useThemeMode } from '../ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
   const { mode, toggleTheme } = useThemeMode();
+  const { user: authUser, signOut } = useAuth();
   const navigate = useNavigate();
+  
+  // Use real user data from auth, with fallbacks
   const [user, setUser] = useState({
-    name: 'Qelly Kaze',
-    email: 'qellyka@example.com',
-    phone: '+250 788 123 456',
-    location: 'Kigali, Rwanda',
-    memberSince: 'January 2024',
-    totalTrips: 45,
-    favoriteRoute: 'Nyabugogo - Kimironko',
+    name: authUser?.name || 'User',
+    email: authUser?.email || '',
+    phone: '',
+    location: '',
+    memberSince: authUser?.created_at ? new Date(authUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
+    totalTrips: 0,
+    favoriteRoute: 'Not set',
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [tripsDialogOpen, setTripsDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({ ...user });
+
+  // Update user state when authUser changes
+  useEffect(() => {
+    if (authUser) {
+      setUser({
+        name: authUser.name || 'User',
+        email: authUser.email || '',
+        phone: '',
+        location: '',
+        memberSince: authUser.created_at ? new Date(authUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
+        totalTrips: 0,
+        favoriteRoute: 'Not set',
+      });
+    }
+  }, [authUser]);
 
   const recentTrips = [
     { id: 1, from: 'Nyabugogo', to: 'Kimironko', date: '2024-11-01', fare: '500 RWF', time: '08:30 AM' },
@@ -76,9 +95,14 @@ const ProfilePage = () => {
     toast.success('Profile updated successfully!');
   };
 
-  const handleLogout = () => {
-    toast.success('Logged out successfully!');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Logged out successfully!');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to logout');
+    }
   };
 
   return (
@@ -105,7 +129,7 @@ const ProfilePage = () => {
                 fontWeight: 700,
               }}
             >
-              {user.name.charAt(0)}
+              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </Avatar>
             <Box>
               <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>

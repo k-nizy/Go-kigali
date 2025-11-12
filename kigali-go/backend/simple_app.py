@@ -11,7 +11,7 @@ from datetime import datetime
 import random
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 # Database setup
 DATABASE = 'kigali_go.db'
@@ -310,9 +310,13 @@ def plan_route():
         'timestamp': datetime.utcnow().isoformat()
     })
 
-@app.route('/api/v1/reports', methods=['POST'])
+@app.route('/api/v1/reports', methods=['POST', 'OPTIONS'])
 def submit_report():
     """Submit a user report about transport issues"""
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data = request.get_json()
         
@@ -356,6 +360,80 @@ def submit_report():
     except Exception as e:
         print(f"❌ Error submitting report: {e}")
         return jsonify({'error': 'Failed to submit report', 'details': str(e)}), 500
+
+@app.route('/api/auth/register', methods=['POST', 'OPTIONS'])
+def register():
+    """Dummy register endpoint - simple app doesn't need real auth"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    data = request.get_json()
+    print(f"👤 Registration attempt: {data.get('email', 'unknown')}")
+    
+    dev_token = f"dev-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{random.randint(1000,9999)}"
+    print(f"   Dev verification token: {dev_token}")
+    
+    return jsonify({
+        'message': 'Account created successfully!',
+        'dev_token': dev_token,
+        'user': {
+            'email': data.get('email', ''),
+            'name': data.get('name', ''),
+            'id': 1
+        }
+    }), 201
+
+@app.route('/api/auth/login', methods=['POST', 'OPTIONS'])
+def login():
+    """Dummy login endpoint - simple app doesn't need real auth"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        data = request.get_json()
+        print(f"👤 Login attempt: {data.get('email', 'unknown')}")
+        print(f"   Request data: {data}")
+        
+        return jsonify({
+            'message': 'Login successful!',
+            'access_token': 'dummy-token-for-development',
+            'user': {
+                'email': data.get('email', ''),
+                'name': data.get('email', '').split('@')[0].title(),
+                'id': 1
+            }
+        }), 200
+    except Exception as e:
+        print(f"❌ Login error: {e}")
+        return jsonify({'error': 'Login failed', 'message': str(e)}), 500
+
+@app.route('/api/auth/profile', methods=['GET', 'OPTIONS'])
+def get_profile():
+    """Dummy profile endpoint"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    return jsonify({
+        'user': {
+            'email': 'user@example.com',
+            'name': 'Test User',
+            'id': 1
+        }
+    }), 200
+
+@app.route('/api/auth/logout', methods=['POST', 'OPTIONS'])
+def logout():
+    """Dummy logout endpoint"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    print(f"👤 Logout attempt")
+    return jsonify({'message': 'Logged out successfully'}), 200
+
+@app.route('/api/auth/refresh', methods=['POST', 'OPTIONS'])
+def refresh_token():
+    """Dummy auth refresh endpoint to prevent errors"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    return jsonify({'message': 'Auth not required for simple app'}), 200
 
 if __name__ == '__main__':
     # Initialize database

@@ -33,8 +33,12 @@ import {
   DirectionsBus,
   LightMode,
   DarkMode,
+  Login,
+  PersonAdd,
+  Logout,
 } from '@mui/icons-material';
 import { useThemeMode } from '../ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
@@ -44,9 +48,11 @@ const LayoutMUI = ({ children }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { mode, toggleTheme } = useThemeMode();
+  const { user, isAuthenticated, signOut } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langAnchorEl, setLangAnchorEl] = useState(null);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
 
   const navigationItems = [
     { path: '/', icon: <Home />, label: t('navigation.home') },
@@ -71,6 +77,20 @@ const LayoutMUI = ({ children }) => {
   const handleLanguageChange = (language) => {
     i18n.changeLanguage(language);
     handleLanguageClose();
+  };
+
+  const handleUserMenuOpen = (event) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    handleUserMenuClose();
+    await signOut();
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path;
@@ -151,12 +171,13 @@ const LayoutMUI = ({ children }) => {
             startIcon={mode === 'dark' ? <LightMode /> : <DarkMode />}
             onClick={toggleTheme}
             sx={{
-              color: mode === 'dark' ? '#b3b3b3' : '#6B7280',
+              color: mode === 'dark' ? '#b3b3b3' : '#4B5563',
               justifyContent: 'flex-start',
               textTransform: 'none',
+              fontWeight: 600,
               '&:hover': {
-                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                color: mode === 'dark' ? '#fff' : '#1A1A1A',
+                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(15, 23, 42, 0.08)',
+                color: mode === 'dark' ? '#fff' : '#1F2937',
               },
             }}
           >
@@ -168,12 +189,13 @@ const LayoutMUI = ({ children }) => {
           startIcon={<Language />}
           onClick={handleLanguageClick}
           sx={{
-            color: mode === 'dark' ? '#b3b3b3' : '#6B7280',
+            color: mode === 'dark' ? '#b3b3b3' : '#4B5563',
             justifyContent: 'flex-start',
             textTransform: 'none',
+            fontWeight: 600,
             '&:hover': {
-              bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-              color: mode === 'dark' ? '#fff' : '#1A1A1A',
+              bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(15, 23, 42, 0.08)',
+              color: mode === 'dark' ? '#fff' : '#1F2937',
             },
           }}
         >
@@ -185,12 +207,14 @@ const LayoutMUI = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* App Bar (Mobile) */}
+      {/* App Bars removed - cleaner look */}
+
+      {/* Mobile App Bar (Mobile) */}
       {isMobile && (
         <AppBar
           position="fixed"
           sx={{
-            bgcolor: '#000',
+            bgcolor: '#0D7377',
             boxShadow: 'none',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
           }}
@@ -219,6 +243,19 @@ const LayoutMUI = ({ children }) => {
                 {t('app.name')}
               </Typography>
             </Box>
+            
+            {/* Auth Buttons in Mobile AppBar */}
+            {isAuthenticated && user ? (
+              <IconButton
+                onClick={handleUserMenuOpen}
+                sx={{ color: '#fff' }}
+                aria-label="User menu"
+              >
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                  {user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()}
+                </Avatar>
+              </IconButton>
+            ) : null}
           </Toolbar>
         </AppBar>
       )}
@@ -238,7 +275,7 @@ const LayoutMUI = ({ children }) => {
               '& .MuiDrawer-paper': {
                 boxSizing: 'border-box',
                 width: drawerWidth,
-                bgcolor: '#000',
+                bgcolor: '#0D7377',
               },
             }}
           >
@@ -251,7 +288,7 @@ const LayoutMUI = ({ children }) => {
               '& .MuiDrawer-paper': {
                 boxSizing: 'border-box',
                 width: drawerWidth,
-                bgcolor: '#000',
+                bgcolor: '#0D7377',
                 borderRight: 'none',
               },
             }}
@@ -269,7 +306,7 @@ const LayoutMUI = ({ children }) => {
           flexGrow: 1,
           width: { md: `calc(100% - ${drawerWidth}px)` },
           minHeight: '100vh',
-          bgcolor: 'background.default',
+          bgcolor: '#0D7377',
           pt: isMobile ? 8 : 0,
         }}
       >
@@ -300,7 +337,7 @@ const LayoutMUI = ({ children }) => {
             },
           }}
         >
-          🇬🇧 English
+          English
         </MenuItem>
         <MenuItem
           onClick={() => handleLanguageChange('rw')}
@@ -314,7 +351,35 @@ const LayoutMUI = ({ children }) => {
             },
           }}
         >
-          🇷🇼 Kinyarwanda
+          Kinyarwanda
+        </MenuItem>
+      </Menu>
+
+      {/* User Menu */}
+      <Menu
+        anchorEl={userMenuAnchorEl}
+        open={Boolean(userMenuAnchorEl)}
+        onClose={handleUserMenuClose}
+        PaperProps={{
+          sx: {
+            bgcolor: mode === 'dark' ? '#282828' : '#fff',
+            minWidth: 200,
+            mt: 1,
+          },
+        }}
+      >
+        <MenuItem onClick={() => { handleUserMenuClose(); navigate('/profile'); }}>
+          <ListItemIcon>
+            <Person fontSize="small" sx={{ color: mode === 'dark' ? '#fff' : '#000' }} />
+          </ListItemIcon>
+          <ListItemText>Profile</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleLogout}>
+          <ListItemIcon>
+            <Logout fontSize="small" sx={{ color: mode === 'dark' ? '#fff' : '#000' }} />
+          </ListItemIcon>
+          <ListItemText>Logout</ListItemText>
         </MenuItem>
       </Menu>
     </Box>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useThemeMode } from '../ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Container,
@@ -29,6 +30,9 @@ import {
   LocationOn,
   PlayArrow,
   ArrowForward,
+  Login,
+  PersonAdd,
+  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 
@@ -36,6 +40,7 @@ const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeMode();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [stats, setStats] = useState({
     vehicles: 0,
     zones: 0,
@@ -147,28 +152,132 @@ const HomePage = () => {
                 fontWeight: 400,
               }}
             >
-              {t('home.subtitle')}
+              {t('home.subtitle') || 'Your smarter way to explore Kigali'}
             </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<PlayArrow />}
-              onClick={() => navigate('/map')}
-              sx={{
-                bgcolor: mode === 'dark' ? '#fff' : '#0D7377',
-                color: mode === 'dark' ? '#000' : '#fff',
-                px: 4,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 700,
-                '&:hover': {
-                  bgcolor: mode === 'dark' ? '#f0f0f0' : '#0A5A5D',
-                  transform: 'scale(1.04)',
-                },
-              }}
-            >
-              {t('home.startJourney') || 'Start Your Journey'}
-            </Button>
+            
+            {/* Auth Buttons - Prominent Display */}
+            {authLoading ? (
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Skeleton variant="rectangular" width={140} height={48} sx={{ borderRadius: 1 }} />
+                <Skeleton variant="rectangular" width={140} height={48} sx={{ borderRadius: 1 }} />
+              </Box>
+            ) : isAuthenticated && user ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#fff',
+                    fontWeight: 500,
+                    mb: 1,
+                  }}
+                >
+                  Welcome back, {user.name || user.email}!
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<DashboardIcon />}
+                    onClick={() => navigate('/map')}
+                    sx={{
+                      bgcolor: '#fff',
+                      color: '#0D7377',
+                      px: 4,
+                      py: 1.5,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      '&:hover': {
+                        bgcolor: '#f0f0f0',
+                        transform: 'scale(1.04)',
+                      },
+                    }}
+                    aria-label="Go to Dashboard"
+                  >
+                    Go to Dashboard
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<PlayArrow />}
+                    onClick={() => navigate('/map')}
+                    sx={{
+                      borderColor: '#fff',
+                      color: '#fff',
+                      px: 4,
+                      py: 1.5,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      '&:hover': {
+                        borderColor: '#fff',
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        transform: 'scale(1.04)',
+                      },
+                    }}
+                  >
+                    View Map
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                }}
+              >
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<Login />}
+                  onClick={() => navigate('/signin')}
+                  sx={{
+                    bgcolor: '#fff',
+                    color: '#0D7377',
+                    px: 4,
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      bgcolor: '#f0f0f0',
+                      transform: 'scale(1.04)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    },
+                  }}
+                  aria-label="Sign in to your account"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<PersonAdd />}
+                  onClick={() => navigate('/signup')}
+                  sx={{
+                    borderColor: '#fff',
+                    color: '#fff',
+                    px: 4,
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    borderWidth: 2,
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      borderColor: '#fff',
+                      borderWidth: 2,
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      transform: 'scale(1.04)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    },
+                  }}
+                  aria-label="Create a new account"
+                >
+                  Sign Up
+                </Button>
+              </Box>
+            )}
           </Box>
         </Container>
       </Box>

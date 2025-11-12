@@ -19,6 +19,11 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 import { useThemeMode } from '../ThemeContext';
+import { apiService } from '../services/api';
+import { 
+  showReportSuccessNotification, 
+  showReportErrorNotification 
+} from '../utils/reportNotifications';
 
 const ReportsPage = () => {
   const { t } = useTranslation();
@@ -41,30 +46,58 @@ const ReportsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.type || !formData.description) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     setLoading(true);
+    
     try {
-      const response = await fetch('/api/v1/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      // Prepare report data with proper field mapping for backend
+      const reportData = {
+        type: formData.type,
+        title: `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} Report`,
+        description: formData.description,
+        location: formData.location || '',
+      };
 
-      if (response.ok) {
+      console.log('📤 Submitting report:', reportData);
+
+      // Use API service for proper error handling and base URL
+      const response = await apiService.reports.create(reportData);
+
+      console.log('✅ Response received:', response);
+
+      // Check if response is successful (status 200-299)
+      if (response && response.status >= 200 && response.status < 300) {
+        // Show friendly random success notification
+        showReportSuccessNotification();
+        
+        // Update UI state
         setSubmitted(true);
-        toast.success('Report submitted successfully!');
         setFormData({ type: '', description: '', location: '' });
+        
+        // Hide success banner after 5 seconds
         setTimeout(() => setSubmitted(false), 5000);
       } else {
-        toast.error('Failed to submit report');
+        // Unexpected response
+        console.warn('⚠️ Unexpected response:', response);
+        showReportErrorNotification();
       }
     } catch (error) {
-      console.error('Error submitting report:', error);
-      toast.error('Error submitting report');
+      // Handle API errors or network issues
+      console.error('❌ Error submitting report:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      // Show friendly error notification
+      showReportErrorNotification();
     } finally {
       setLoading(false);
     }

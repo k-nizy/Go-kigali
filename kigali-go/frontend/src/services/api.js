@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -42,23 +42,23 @@ api.interceptors.response.use(
 export const apiService = {
   // Auth endpoints
   auth: {
-    register: (data) => api.post('/auth/register', data),
-    login: (data) => api.post('/auth/login', data),
-    getProfile: () => api.get('/auth/profile'),
-    updateProfile: (data) => api.put('/auth/profile', data),
-    changePassword: (data) => api.post('/auth/change-password', data),
+    register: (data) => api.post('/api/v1/auth/register', data),
+    login: (data) => api.post('/api/v1/auth/login', data),
+    getProfile: () => api.get('/api/v1/auth/profile'),
+    updateProfile: (data) => api.put('/api/v1/auth/profile', data),
+    changePassword: (data) => api.post('/api/v1/auth/change-password', data),
   },
 
   // Trip planning
   routes: {
     plan: (origin, destination) => 
-      api.get(`/routes/plan?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`),
+      api.get(`/api/v1/routes/plan?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`),
   },
 
   // Vehicles
   vehicles: {
     getNearby: (lat, lng, radius = 1.0, type = null) => {
-      let url = `/vehicles/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+      let url = `/api/v1/vehicles/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
       if (type) url += `&type=${encodeURIComponent(type)}`;
       return api.get(url);
     },
@@ -66,39 +66,39 @@ export const apiService = {
 
   // Zones and stops
   zones: {
-    getAll: () => api.get('/zones'),
+    getAll: () => api.get('/api/v1/zones'),
   },
   stops: {
-    getByZone: (zoneId) => api.get(`/stops?zone_id=${encodeURIComponent(zoneId)}`),
-    getAll: () => api.get('/stops'),
+    getByZone: (zoneId) => api.get(`/api/v1/stops?zone_id=${encodeURIComponent(zoneId)}`),
+    getAll: () => api.get('/api/v1/stops'),
   },
 
   // Fare estimation
   fare: {
     estimate: (distance, duration, mode) =>
-      api.get(`/fare/estimate?distance_km=${encodeURIComponent(distance)}&duration_minutes=${encodeURIComponent(duration)}&mode=${encodeURIComponent(mode)}`),
+      api.get(`/api/v1/fare/estimate?distance_km=${encodeURIComponent(distance)}&duration_minutes=${encodeURIComponent(duration)}&mode=${encodeURIComponent(mode)}`),
   },
 
   // Reports
   reports: {
-    create: (data) => api.post('/reports', data),
-    getAll: (params = {}) => api.get('/reports', { params }),
+    create: (data) => api.post('/api/v1/reports', data),
+    getAll: (params = {}) => api.get('/api/v1/reports', { params }),
   },
 
   // Statistics
   statistics: {
-    get: () => api.get('/statistics'),
+    get: () => api.get('/api/v1/statistics'),
   },
 
   // Admin endpoints
   admin: {
-    getDashboard: () => api.get('/admin/dashboard'),
-    getVehicles: (params = {}) => api.get('/admin/vehicles', { params }),
-    updateVehicle: (id, data) => api.put(`/admin/vehicles/${id}`, data),
-    getReports: (params = {}) => api.get('/admin/reports', { params }),
-    updateReport: (id, data) => api.put(`/admin/reports/${id}`, data),
-    seedData: () => api.post('/admin/seed'),
-    simulateMovement: () => api.post('/admin/vehicles/simulate'),
+    getDashboard: () => api.get('/api/v1/admin/dashboard'),
+    getVehicles: (params = {}) => api.get('/api/v1/admin/vehicles', { params }),
+    updateVehicle: (id, data) => api.put(`/api/v1/admin/vehicles/${id}`, data),
+    getReports: (params = {}) => api.get('/api/v1/admin/reports', { params }),
+    updateReport: (id, data) => api.put(`/api/v1/admin/reports/${id}`, data),
+    seedData: () => api.post('/api/v1/admin/seed'),
+    simulateMovement: () => api.post('/api/v1/admin/vehicles/simulate'),
   },
 };
 
