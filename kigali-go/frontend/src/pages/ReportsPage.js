@@ -57,10 +57,10 @@ const ReportsPage = () => {
     try {
       // Prepare report data with proper field mapping for backend
       const reportData = {
-        type: formData.type,
+        report_type: formData.type,
         title: `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} Report`,
         description: formData.description,
-        location: formData.location || '',
+        address: formData.location?.trim() || undefined,
       };
 
       console.log('📤 Submitting report:', reportData);
