@@ -72,7 +72,36 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL') or 'sqlite:///kigali_go.db'
+    
+    # Get database URL and configure for serverless
+    _db_url = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL')
+    
+    # Ensure proper SSL mode for Supabase (only if not already present)
+    if _db_url and 'supabase' in _db_url.lower():
+        # Check if sslmode is already in the URL
+        if 'sslmode' not in _db_url.lower():
+            _db_url += '&sslmode=require' if '?' in _db_url else '?sslmode=require'
+    
+    SQLALCHEMY_DATABASE_URI = _db_url or 'sqlite:///kigali_go.db'
+    
+    # SQLAlchemy engine options for serverless (Vercel)
+    # Note: connect_args for psycopg2 should not duplicate URL parameters
+    _connect_args = {
+        'connect_timeout': 10,  # 10 second timeout
+    }
+    
+    # Only add sslmode to connect_args if not in URL (psycopg2 prefers URL params)
+    if _db_url and 'supabase' in _db_url.lower() and 'sslmode' not in _db_url.lower():
+        _connect_args['sslmode'] = 'require'
+    
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Verify connections before using
+        'pool_recycle': 300,    # Recycle connections after 5 minutes
+        'pool_size': 1,         # Small pool for serverless
+        'max_overflow': 0,      # No overflow for serverless
+        'connect_args': _connect_args
+    }
+    
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_CSRF_PROTECT = True
     
@@ -80,6 +109,10 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
+        
+        # Configure SQLAlchemy engine options
+        if hasattr(cls, 'SQLALCHEMY_ENGINE_OPTIONS'):
+            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = cls.SQLALCHEMY_ENGINE_OPTIONS
         
         # Log to stderr
         import logging

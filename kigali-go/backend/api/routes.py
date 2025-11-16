@@ -193,9 +193,12 @@ def create_report():
         
         # Check database connection
         try:
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            db.session.commit()
         except Exception as db_error:
             current_app.logger.error(f'Database connection error: {db_error}')
+            db.session.rollback()
             return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
         # Create report
@@ -253,9 +256,12 @@ def get_statistics():
     try:
         # Check database connection
         try:
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            db.session.commit()
         except Exception as db_error:
             current_app.logger.error(f'Database connection error: {db_error}')
+            db.session.rollback()
             # Return default stats if DB is unavailable
             return jsonify({
                 'statistics': {

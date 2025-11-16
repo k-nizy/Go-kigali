@@ -27,6 +27,45 @@ def create_app(config_name: str = None) -> Flask:
     
     # Initialize extensions
     db.init_app(app)
+    
+    # Configure SQLAlchemy engine for serverless environments after initialization
+    engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+    if engine_options and 'postgresql' in app.config.get('SQLALCHEMY_DATABASE_URI', '').lower():
+        # Apply engine options by recreating the engine
+        from sqlalchemy import create_engine
+        from sqlalchemy.pool import QueuePool
+        
+        # Get the database URI
+        db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+        
+        # Create engine with options
+        new_engine = create_engine(
+            db_uri,
+            poolclass=QueuePool,
+            pool_pre_ping=engine_options.get('pool_pre_ping', True),
+            pool_recycle=engine_options.get('pool_recycle', 300),
+            pool_size=engine_options.get('pool_size', 1),
+            max_overflow=engine_options.get('max_overflow', 0),
+            connect_args=engine_options.get('connect_args', {})
+        )
+        
+        # Replace the engine
+        db.engine = new_engine
+        
+        # Set up connection event listeners
+        from sqlalchemy import event
+        from sqlalchemy.pool import Pool
+        
+        @event.listens_for(Pool, "connect")
+        def set_postgres_params(dbapi_conn, connection_record):
+            """Set connection parameters for PostgreSQL"""
+            try:
+                # Set timezone and application name
+                with dbapi_conn.cursor() as cursor:
+                    cursor.execute("SET timezone = 'UTC'")
+                    cursor.execute("SET application_name = 'kigali-go-api'")
+            except Exception as e:
+                app.logger.warning(f'Could not set PostgreSQL connection parameters: {e}')
     migrate.init_app(app, db)
     jwt.init_app(app)
     limiter.init_app(app)

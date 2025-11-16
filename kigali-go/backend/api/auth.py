@@ -60,9 +60,12 @@ def register():
         
         # Check database connection
         try:
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            db.session.commit()
         except Exception as db_error:
             current_app.logger.error(f'Database connection error: {db_error}')
+            db.session.rollback()
             return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
         # Check if user already exists
@@ -125,9 +128,12 @@ def login():
         
         # Check database connection
         try:
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            db.session.commit()
         except Exception as db_error:
             current_app.logger.error(f'Database connection error: {db_error}')
+            db.session.rollback()
             return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
         # Find user by email or phone
