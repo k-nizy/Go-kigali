@@ -171,7 +171,7 @@ def get_profile():
     """Get current user profile"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.query(User).get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404

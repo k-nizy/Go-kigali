@@ -85,8 +85,8 @@ def get_nearby_vehicles():
         if lat == 0 and lng == 0:
             return jsonify({'error': 'Valid coordinates are required'}), 400
         
-        # Query nearby vehicles
-        vehicles = Vehicle.query.filter(Vehicle.is_active == True).all()
+        # Query nearby vehicles - use db.session.query
+        vehicles = db.session.query(Vehicle).filter(Vehicle.is_active == True).all()
         
         nearby_vehicles = []
         for vehicle in vehicles:
@@ -134,7 +134,8 @@ def get_stops():
         zone_id = request.args.get('zone_id')
         stop_type = request.args.get('type')
         
-        query = Stop.query.filter_by(is_active=True)
+        # Use db.session.query to ensure we're using the correct db instance
+        query = db.session.query(Stop).filter_by(is_active=True)
         
         if zone_id:
             query = query.filter_by(zone_id=zone_id)
@@ -244,8 +245,11 @@ def get_reports():
         report_type = request.args.get('type')
         
         from models.report import Report
-        
-        reports = Report.get_recent_reports(limit=limit, report_type=report_type)
+        # Use db.session.query to ensure we're using the correct db instance
+        query = db.session.query(Report).order_by(Report.created_at.desc())
+        if report_type:
+            query = query.filter_by(report_type=report_type)
+        reports = query.limit(limit).all()
         
         return jsonify({
             'reports': [report.to_dict(include_admin_fields=True) for report in reports],

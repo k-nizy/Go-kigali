@@ -392,7 +392,7 @@ def get_current_user():
         current_user_id = get_jwt_identity()
         current_app.logger.info(f'JWT identity: {current_user_id}')
         # Convert string ID to int for database query
-        user = User.query.get(int(current_user_id))
+        user = db.session.query(User).get(int(current_user_id))
         
         if not user:
             return jsonify({'message': 'User not found'}), 404
