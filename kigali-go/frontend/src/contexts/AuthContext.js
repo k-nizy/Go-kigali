@@ -3,7 +3,7 @@
  * Manages user authentication state and provides auth methods
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authService, setAccessToken, clearAccessToken } from '../services/authApi';
+import { authService, clearAccessToken } from '../services/authApi';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
@@ -28,11 +28,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Set a timeout to ensure loading doesn't hang
-        const timeoutId = setTimeout(() => {
-          setLoading(false);
-        }, 2000);
-
         // Skip auth refresh for simple app - not needed
         setUser(null);
         setIsAuthenticated(false);

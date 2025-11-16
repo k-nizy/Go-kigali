@@ -24,7 +24,6 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import {
-  Person,
   Email,
   Phone,
   LocationOn,

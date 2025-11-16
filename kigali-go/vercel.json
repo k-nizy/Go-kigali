@@ -14,35 +14,19 @@
       "use": "@vercel/python"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/:file*",
+      "destination": "/frontend/:file"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/"
     }
-  ],
-  "env": {
-    "REACT_APP_API_URL": "@react_app_api_url",
-    "REACT_APP_GOOGLE_MAPS_KEY": "@react_app_google_maps_key",
-    "FLASK_ENV": "production",
-    "SECRET_KEY": "@flask_secret_key",
-    "JWT_SECRET_KEY": "@flask_jwt_secret",
-    "DATABASE_URL": "@database_url",
-    "CORS_ORIGINS": "@cors_origins",
-    "MAIL_SERVER": "@mail_server",
-    "MAIL_PORT": "@mail_port",
-    "MAIL_USERNAME": "@mail_username",
-    "MAIL_PASSWORD": "@mail_password",
-    "MAIL_DEFAULT_SENDER": "@mail_default_sender"
-  },
-  "build": {
-    "env": {
-      "REACT_APP_API_URL": "@react_app_api_url",
-      "REACT_APP_GOOGLE_MAPS_KEY": "@react_app_google_maps_key"
-    }
-  }
+  ]
 }
 

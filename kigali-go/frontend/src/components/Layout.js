@@ -33,8 +33,6 @@ import {
   DirectionsBus,
   LightMode,
   DarkMode,
-  Login,
-  PersonAdd,
   Logout,
 } from '@mui/icons-material';
 import { useThemeMode } from '../ThemeContext';

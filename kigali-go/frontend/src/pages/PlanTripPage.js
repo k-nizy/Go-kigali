@@ -19,7 +19,6 @@ import {
   Navigation,
   LocationOn,
   AccessTime,
-  AttachMoney,
   DirectionsBus,
   DirectionsCar,
   TwoWheeler,

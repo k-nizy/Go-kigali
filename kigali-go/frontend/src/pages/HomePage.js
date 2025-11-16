@@ -25,7 +25,6 @@ import {
   Map as MapIcon,
   Calculate,
   Report,
-  TrendingUp,
   People,
   LocationOn,
   PlayArrow,
@@ -34,7 +33,6 @@ import {
   PersonAdd,
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
-import { toast } from 'react-hot-toast';
 
 const HomePage = () => {
   const { t } = useTranslation();
