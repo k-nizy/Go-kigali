@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT uuid_generate_v4()::text,
+    uuid VARCHAR(36) UNIQUE NOT NULL DEFAULT gen_random_uuid()::text,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(20) UNIQUE,
