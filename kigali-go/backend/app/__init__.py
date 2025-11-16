@@ -1,12 +1,13 @@
 """
 Flask application factory for KigaliGo Auth System
 """
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from app.extensions import db, migrate, jwt, limiter, ma, bcrypt
 from app.config import config_by_name
 from utils.error_handlers import register_error_handlers
 import os
+import traceback
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -142,6 +143,66 @@ def create_app(config_name: str = None) -> Flask:
     @app.route('/api/health')
     def health():
         return {'status': 'healthy', 'service': 'kigali-go-auth'}, 200
+    
+    # Database diagnostic endpoint
+    @app.route('/api/debug/db')
+    def debug_db():
+        """Debug endpoint to check database connection and tables"""
+        try:
+            from sqlalchemy import text, inspect
+            from models import User
+            
+            diagnostics = {
+                'database_uri': app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT SET')[:50] + '...' if app.config.get('SQLALCHEMY_DATABASE_URI') else 'NOT SET',
+                'connection_test': False,
+                'users_table_exists': False,
+                'users_table_columns': [],
+                'error': None
+            }
+            
+            # Test connection
+            try:
+                db.session.execute(text('SELECT 1'))
+                db.session.commit()
+                diagnostics['connection_test'] = True
+            except Exception as conn_error:
+                diagnostics['error'] = str(conn_error)
+                return jsonify(diagnostics), 500
+            
+            # Check if users table exists and get columns
+            try:
+                inspector = inspect(db.engine)
+                tables = inspector.get_table_names()
+                diagnostics['all_tables'] = tables
+                diagnostics['users_table_exists'] = 'users' in tables
+                
+                if 'users' in tables:
+                    columns = inspector.get_columns('users')
+                    diagnostics['users_table_columns'] = [
+                        {
+                            'name': col['name'],
+                            'type': str(col['type']),
+                            'nullable': col['nullable']
+                        }
+                        for col in columns
+                    ]
+                    
+                    # Try to query users table
+                    try:
+                        user_count = User.query.count()
+                        diagnostics['user_count'] = user_count
+                    except Exception as query_error:
+                        diagnostics['query_error'] = str(query_error)
+            except Exception as inspect_error:
+                diagnostics['inspect_error'] = str(inspect_error)
+            
+            return jsonify(diagnostics), 200
+            
+        except Exception as e:
+            return jsonify({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }), 500
     
     # Debug endpoint to test JWT
     @app.route('/debug/jwt')
