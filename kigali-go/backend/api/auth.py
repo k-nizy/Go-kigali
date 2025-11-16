@@ -10,7 +10,8 @@ from models import db, User
 from datetime import timedelta
 import re
 
-auth_bp = Blueprint('auth', __name__)
+# Use a unique blueprint name to avoid conflicts with the main auth blueprint
+auth_bp = Blueprint('legacy_auth', __name__, url_prefix=None)
 
 # Initialize rate limiter
 limiter = Limiter(
