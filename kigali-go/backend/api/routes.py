@@ -118,7 +118,8 @@ def get_nearby_vehicles():
 def get_zones():
     """Get all zones"""
     try:
-        zones = Zone.query.filter_by(is_active=True).all()
+        # Use db.session.query to ensure we're using the correct db instance
+        zones = db.session.query(Zone).filter_by(is_active=True).all()
         return jsonify({
             'zones': [zone.to_dict() for zone in zones],
             'count': len(zones)

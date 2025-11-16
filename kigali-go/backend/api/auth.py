@@ -68,14 +68,14 @@ def register():
             db.session.rollback()
             return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
-        # Check if user already exists
+        # Check if user already exists - use db.session.query
         if email:
-            existing_user = User.query.filter_by(email=email).first()
+            existing_user = db.session.query(User).filter_by(email=email).first()
             if existing_user:
                 return jsonify({'code': 409, 'message': 'Email already registered'}), 409
         
         if phone:
-            existing_user = User.query.filter_by(phone=phone).first()
+            existing_user = db.session.query(User).filter_by(phone=phone).first()
             if existing_user:
                 return jsonify({'code': 409, 'message': 'Phone number already registered'}), 409
         
@@ -190,7 +190,7 @@ def update_profile():
     """Update current user profile"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.query(User).get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -209,7 +209,7 @@ def update_profile():
             email = data['email'].strip().lower()
             if is_valid_email(email):
                 # Check if email is already taken by another user
-                existing_user = User.query.filter_by(email=email).first()
+                existing_user = db.session.query(User).filter_by(email=email).first()
                 if existing_user and existing_user.id != user.id:
                     return jsonify({'error': 'Email already taken'}), 409
                 user.email = email
@@ -220,7 +220,7 @@ def update_profile():
             phone = data['phone'].strip()
             if is_valid_phone(phone):
                 # Check if phone is already taken by another user
-                existing_user = User.query.filter_by(phone=phone).first()
+                existing_user = db.session.query(User).filter_by(phone=phone).first()
                 if existing_user and existing_user.id != user.id:
                     return jsonify({'error': 'Phone number already taken'}), 409
                 user.phone = phone
@@ -252,7 +252,7 @@ def change_password():
     """Change user password"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.query(User).get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
