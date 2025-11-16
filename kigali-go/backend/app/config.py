@@ -72,7 +72,7 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL') or 'sqlite:///kigali_go.db'
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_CSRF_PROTECT = True
     

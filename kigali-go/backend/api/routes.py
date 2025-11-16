@@ -2,24 +2,34 @@
 Main API routes for KigaliGo application
 """
 
-from flask import Blueprint, request, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from models import db, Vehicle, Zone, Stop, Trip, FareRule
+from flask import Blueprint, request, jsonify, current_app
+from app.extensions import db
+from models import Vehicle, Zone, Stop, Trip, FareRule
 from datetime import datetime
 import requests
 import os
+import traceback
 
 api_bp = Blueprint('api', __name__)
 
-# Initialize rate limiter
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["1000 per hour"]
-)
+# Rate limiter will be initialized by the app factory
+limiter = None
+
+def init_limiter(app_limiter):
+    """Initialize limiter from app"""
+    global limiter
+    limiter = app_limiter
+
+def rate_limit_decorator(limit_str):
+    """Create a rate limit decorator that works with or without limiter"""
+    def decorator(func):
+        if limiter:
+            return limiter.limit(limit_str)(func)
+        return func
+    return decorator
 
 @api_bp.route('/routes/plan', methods=['GET'])
-@limiter.limit("60 per minute")
+@rate_limit_decorator("60 per minute")
 def plan_route():
     """Plan a route between origin and destination"""
     try:
@@ -59,7 +69,7 @@ def plan_route():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/vehicles/nearby', methods=['GET'])
-@limiter.limit("120 per minute")
+@rate_limit_decorator("120 per minute")
 def get_nearby_vehicles():
     """Get nearby vehicles within radius"""
     try:
@@ -137,7 +147,7 @@ def get_stops():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/fare/estimate', methods=['GET'])
-@limiter.limit("120 per minute")
+@rate_limit_decorator("120 per minute")
 def estimate_fare():
     """Estimate fare for given parameters"""
     try:
@@ -166,30 +176,41 @@ def estimate_fare():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/reports', methods=['POST'])
-@limiter.limit("10 per minute")
+@rate_limit_decorator("10 per minute")
 def create_report():
     """Create a new report"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
-        required_fields = ['report_type', 'title', 'description']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'{field} is required'}), 400
+        # Support both 'type' and 'report_type' for compatibility
+        report_type = data.get('report_type') or data.get('type', 'other')
+        title = data.get('title', '')
+        description = data.get('description', '')
+        
+        # Either title or description must be provided
+        if not title and not description:
+            return jsonify({'code': 400, 'message': 'Title or description is required'}), 400
+        
+        # Check database connection
+        try:
+            db.session.execute('SELECT 1')
+        except Exception as db_error:
+            current_app.logger.error(f'Database connection error: {db_error}')
+            return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
         # Create report
         from models.report import Report
         
         report = Report(
             user_id=data.get('user_id'),
-            report_type=data['report_type'],
-            title=data['title'],
-            description=data['description'],
+            report_type=report_type,
+            title=title or 'No title',
+            description=description,
             lat=data.get('lat'),
             lng=data.get('lng'),
-            address=data.get('address'),
+            address=data.get('address') or data.get('location', ''),
             vehicle_id=data.get('vehicle_id'),
-            vehicle_registration=data.get('vehicle_registration'),
+            vehicle_registration=data.get('vehicle_registration', ''),
             photo_url=data.get('photo_url')
         )
         
@@ -203,7 +224,8 @@ def create_report():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f'Create report error: {str(e)}\n{traceback.format_exc()}')
+        return jsonify({'code': 500, 'message': 'An unexpected error occurred'}), 500
 
 @api_bp.route('/reports', methods=['GET'])
 def get_reports():
@@ -229,6 +251,24 @@ def get_reports():
 def get_statistics():
     """Get system statistics"""
     try:
+        # Check database connection
+        try:
+            db.session.execute('SELECT 1')
+        except Exception as db_error:
+            current_app.logger.error(f'Database connection error: {db_error}')
+            # Return default stats if DB is unavailable
+            return jsonify({
+                'statistics': {
+                    'total_vehicles': 0,
+                    'active_vehicles': 0,
+                    'total_zones': 0,
+                    'total_stops': 0,
+                    'total_trips': 0,
+                    'today_trips': 0
+                },
+                'timestamp': datetime.utcnow().isoformat()
+            }), 200
+        
         stats = {
             'total_vehicles': Vehicle.query.filter_by(is_active=True).count(),
             'total_zones': Zone.query.filter_by(is_active=True).count(),
@@ -237,7 +277,10 @@ def get_statistics():
             'active_vehicles': Vehicle.query.filter(
                 Vehicle.is_active == True,
                 Vehicle.last_seen >= datetime.utcnow().replace(hour=0, minute=0, second=0)
-            ).count()
+            ).count() if hasattr(Vehicle, 'last_seen') else Vehicle.query.filter_by(is_active=True).count(),
+            'today_trips': Trip.query.filter(
+                Trip.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0)
+            ).count() if hasattr(Trip, 'created_at') else 0
         }
         
         return jsonify({
@@ -246,7 +289,19 @@ def get_statistics():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f'Statistics error: {str(e)}\n{traceback.format_exc()}')
+        # Return default stats on error
+        return jsonify({
+            'statistics': {
+                'total_vehicles': 0,
+                'active_vehicles': 0,
+                'total_zones': 0,
+                'total_stops': 0,
+                'total_trips': 0,
+                'today_trips': 0
+            },
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
 
 def get_route_options(origin_lat, origin_lng, dest_lat, dest_lng):
     """Get route options using Google Directions API or fallback calculation"""

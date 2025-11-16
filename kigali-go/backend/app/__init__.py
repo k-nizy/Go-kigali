@@ -73,14 +73,27 @@ def create_app(config_name: str = None) -> Flask:
     
     # Register blueprints
     from app.resources.auth import auth_bp
-    from api.routes import api_bp as legacy_api_bp
-    from api.auth import auth_bp as legacy_auth_bp
+    from api.routes import api_bp as legacy_api_bp, init_limiter as init_routes_limiter
+    from api.auth import auth_bp as legacy_auth_bp, init_limiter as init_auth_limiter
     from api.admin import admin_bp as legacy_admin_bp
+
+    # Initialize limiters for api routes
+    init_routes_limiter(limiter)
+    init_auth_limiter(limiter)
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(legacy_api_bp, url_prefix='/api/v1')
     app.register_blueprint(legacy_auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(legacy_admin_bp, url_prefix='/api/v1/admin')
+    
+    # Initialize database tables if they don't exist (for serverless)
+    try:
+        with app.app_context():
+            # Only create tables if using SQLite (development)
+            if 'sqlite' in app.config.get('SQLALCHEMY_DATABASE_URI', ''):
+                db.create_all()
+    except Exception as e:
+        app.logger.warning(f'Could not initialize database tables: {e}')
 
     # Register legacy error handlers
     register_error_handlers(app)
