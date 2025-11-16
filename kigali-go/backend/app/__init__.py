@@ -5,6 +5,7 @@ from flask import Flask
 from flask_cors import CORS
 from app.extensions import db, migrate, jwt, limiter, ma, bcrypt
 from app.config import config_by_name
+from utils.error_handlers import register_error_handlers
 import os
 
 
@@ -72,10 +73,21 @@ def create_app(config_name: str = None) -> Flask:
     
     # Register blueprints
     from app.resources.auth import auth_bp
+    from api.routes import api_bp as legacy_api_bp
+    from api.auth import auth_bp as legacy_auth_bp
+    from api.admin import admin_bp as legacy_admin_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(legacy_api_bp, url_prefix='/api/v1')
+    app.register_blueprint(legacy_auth_bp, url_prefix='/api/v1/auth')
+    app.register_blueprint(legacy_admin_bp, url_prefix='/api/v1/admin')
+
+    # Register legacy error handlers
+    register_error_handlers(app)
     
     # Health check endpoint
     @app.route('/health')
+    @app.route('/api/health')
     def health():
         return {'status': 'healthy', 'service': 'kigali-go-auth'}, 200
     
