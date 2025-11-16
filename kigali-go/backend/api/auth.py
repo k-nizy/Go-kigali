@@ -136,12 +136,12 @@ def login():
             db.session.rollback()
             return jsonify({'code': 500, 'message': 'Database connection error. Please try again later.'}), 500
         
-        # Find user by email or phone
+        # Find user by email or phone - use db.session.query for correct instance
         user = None
         if '@' in identifier:
-            user = User.query.filter_by(email=identifier.lower()).first()
+            user = db.session.query(User).filter_by(email=identifier.lower()).first()
         else:
-            user = User.query.filter_by(phone=identifier).first()
+            user = db.session.query(User).filter_by(phone=identifier).first()
         
         if not user or not user.check_password(password):
             return jsonify({'code': 401, 'message': 'Invalid credentials'}), 401
