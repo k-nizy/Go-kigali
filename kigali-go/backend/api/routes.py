@@ -4,7 +4,11 @@ Main API routes for KigaliGo application
 
 from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db
-from models import Vehicle, Zone, Stop, Trip, FareRule
+from models.vehicle import Vehicle
+from models.zone import Zone
+from models.stop import Stop
+from models.trip import Trip
+from models.fare_rule import FareRule
 from datetime import datetime
 import requests
 import os
@@ -275,16 +279,17 @@ def get_statistics():
                 'timestamp': datetime.utcnow().isoformat()
             }), 200
         
+        # Use db.session.query to ensure we're using the correct db instance
         stats = {
-            'total_vehicles': Vehicle.query.filter_by(is_active=True).count(),
-            'total_zones': Zone.query.filter_by(is_active=True).count(),
-            'total_stops': Stop.query.filter_by(is_active=True).count(),
-            'total_trips': Trip.query.count(),
-            'active_vehicles': Vehicle.query.filter(
+            'total_vehicles': db.session.query(Vehicle).filter_by(is_active=True).count(),
+            'total_zones': db.session.query(Zone).filter_by(is_active=True).count(),
+            'total_stops': db.session.query(Stop).filter_by(is_active=True).count(),
+            'total_trips': db.session.query(Trip).count(),
+            'active_vehicles': db.session.query(Vehicle).filter(
                 Vehicle.is_active == True,
                 Vehicle.last_seen >= datetime.utcnow().replace(hour=0, minute=0, second=0)
-            ).count() if hasattr(Vehicle, 'last_seen') else Vehicle.query.filter_by(is_active=True).count(),
-            'today_trips': Trip.query.filter(
+            ).count() if hasattr(Vehicle, 'last_seen') else db.session.query(Vehicle).filter_by(is_active=True).count(),
+            'today_trips': db.session.query(Trip).filter(
                 Trip.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0)
             ).count() if hasattr(Trip, 'created_at') else 0
         }

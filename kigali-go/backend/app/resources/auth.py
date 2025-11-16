@@ -13,7 +13,7 @@ import uuid
 import traceback
 
 from app.extensions import db, limiter
-from models import User
+from models.user import User
 from app.models import TokenBlocklist, PasswordResetToken, EmailVerificationToken
 from app.schemas import (
     RegisterSchema, LoginSchema, ForgotPasswordSchema,
