@@ -9,9 +9,11 @@ from flask_jwt_extended import (
 from marshmallow import ValidationError
 from datetime import datetime, timedelta
 import secrets
+import uuid
 
 from app.extensions import db, limiter
-from app.models import User, TokenBlocklist, PasswordResetToken, EmailVerificationToken
+from models import User
+from app.models import TokenBlocklist, PasswordResetToken, EmailVerificationToken
 from app.schemas import (
     RegisterSchema, LoginSchema, ForgotPasswordSchema,
     ResetPasswordSchema, UserSchema
@@ -58,7 +60,8 @@ def register():
         email=data['email'],
         name=data.get('name', ''),
         is_active=True,
-        is_email_verified=False
+        is_email_verified=False,
+        uuid=str(uuid.uuid4())
     )
     user.set_password(data['password'])
     
