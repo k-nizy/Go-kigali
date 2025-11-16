@@ -150,14 +150,16 @@ def create_app(config_name: str = None) -> Flask:
         """Debug endpoint to check database connection and tables"""
         try:
             from sqlalchemy import text, inspect
-            from models import User
             
             diagnostics = {
-                'database_uri': app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT SET')[:50] + '...' if app.config.get('SQLALCHEMY_DATABASE_URI') else 'NOT SET',
+                'database_uri_set': bool(app.config.get('SQLALCHEMY_DATABASE_URI')),
+                'database_uri_preview': app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT SET')[:80] + '...' if app.config.get('SQLALCHEMY_DATABASE_URI') else 'NOT SET',
                 'connection_test': False,
                 'users_table_exists': False,
+                'all_tables': [],
                 'users_table_columns': [],
-                'error': None
+                'error': None,
+                'errors': []
             }
             
             # Test connection
@@ -167,40 +169,50 @@ def create_app(config_name: str = None) -> Flask:
                 diagnostics['connection_test'] = True
             except Exception as conn_error:
                 diagnostics['error'] = str(conn_error)
-                return jsonify(diagnostics), 500
+                diagnostics['errors'].append(f'Connection error: {str(conn_error)}')
+                db.session.rollback()
             
             # Check if users table exists and get columns
-            try:
-                inspector = inspect(db.engine)
-                tables = inspector.get_table_names()
-                diagnostics['all_tables'] = tables
-                diagnostics['users_table_exists'] = 'users' in tables
-                
-                if 'users' in tables:
-                    columns = inspector.get_columns('users')
-                    diagnostics['users_table_columns'] = [
-                        {
-                            'name': col['name'],
-                            'type': str(col['type']),
-                            'nullable': col['nullable']
-                        }
-                        for col in columns
-                    ]
+            if diagnostics['connection_test']:
+                try:
+                    inspector = inspect(db.engine)
+                    tables = inspector.get_table_names()
+                    diagnostics['all_tables'] = sorted(tables)
+                    diagnostics['users_table_exists'] = 'users' in tables
                     
-                    # Try to query users table
-                    try:
-                        user_count = User.query.count()
-                        diagnostics['user_count'] = user_count
-                    except Exception as query_error:
-                        diagnostics['query_error'] = str(query_error)
-            except Exception as inspect_error:
-                diagnostics['inspect_error'] = str(inspect_error)
+                    if 'users' in tables:
+                        try:
+                            columns = inspector.get_columns('users')
+                            diagnostics['users_table_columns'] = [
+                                {
+                                    'name': col['name'],
+                                    'type': str(col['type']),
+                                    'nullable': col['nullable']
+                                }
+                                for col in columns
+                            ]
+                        except Exception as col_error:
+                            diagnostics['errors'].append(f'Column inspection error: {str(col_error)}')
+                        
+                        # Try to query users table
+                        try:
+                            from models import User
+                            user_count = User.query.count()
+                            diagnostics['user_count'] = user_count
+                        except Exception as query_error:
+                            diagnostics['query_error'] = str(query_error)
+                            diagnostics['errors'].append(f'Query error: {str(query_error)}')
+                except Exception as inspect_error:
+                    diagnostics['inspect_error'] = str(inspect_error)
+                    diagnostics['errors'].append(f'Inspection error: {str(inspect_error)}')
             
             return jsonify(diagnostics), 200
             
         except Exception as e:
+            import traceback
             return jsonify({
                 'error': str(e),
+                'error_type': type(e).__name__,
                 'traceback': traceback.format_exc()
             }), 500
     
