@@ -3,7 +3,7 @@
 ## The Overview
 This document outlines the major design enhancements made to the KigaliGo transport app to improve user experience and visual appeal.
 
-## 🎨 New Visual Assets Created
+##  New Visual Assets Created
 
 ### SVG Illustrations (Located in `/frontend/public/images/`)
 
@@ -34,7 +34,7 @@ This document outlines the major design enhancements made to the KigaliGo transp
    - **user-profile.svg**: Profile management illustration
    - **rwandan-flag-pattern.svg**: Rwanda flag-inspired pattern
 
-## 🚀 Page Enhancements
+##  Page Enhancements
 
 ### HomePage (`src/pages/HomePage.js`)
 **Changes:**
@@ -77,14 +77,14 @@ This document outlines the major design enhancements made to the KigaliGo transp
 - ✅ User profile illustration
 - ✅ Enhanced settings UI
 
-## 🎭 Layout Component Updates (`src/components/Layout.js`)
+##  Layout Component Updates (`src/components/Layout.js`)
 **Changes:**
 - ✅ New logo image integration
 - ✅ Gradient text effect on app name
 - ✅ Hover scale animation on logo
 - ✅ Improved navigation styling
 
-## 🎬 CSS Enhancements (`src/index.css`)
+##  CSS Enhancements (`src/index.css`)
 
 ### New Animations Added:
 - `fadeIn`: Smooth fade-in effect (0.8s)
@@ -106,7 +106,7 @@ This document outlines the major design enhancements made to the KigaliGo transp
 - `.shadow-glow`: Blue glow effect
 - `.shadow-glow-green`: Green glow effect
 
-## 🎨 Design System
+##  Design System
 
 ### Color Palette
 - **Primary Blue**: #1E90FF (Transport/Bus)
@@ -129,13 +129,13 @@ This document outlines the major design enhancements made to the KigaliGo transp
 - `shadow-strong`: Strong prominence
 - Custom glows for emphasis
 
-## 📱 Responsive Design
+##  Responsive Design
 All images and layouts are fully responsive:
 - **Desktop (≥768px)**: Full illustrations visible
 - **Mobile (<768px)**: Illustrations hidden, optimized layouts
 - Touch-friendly button sizes (minimum 44x44px)
 
-## 🚦 Interactive Elements
+##  Interactive Elements
 
 ### Hover Effects
 - Scale transforms on buttons (1.05x)
@@ -148,26 +148,26 @@ All images and layouts are fully responsive:
 - Skeleton loaders for content
 - Smooth transitions between states
 
-## 🌍 Rwanda Cultural Elements
+##  Rwanda Cultural Elements
 - **Imigongo patterns**: Traditional geometric art patterns
 - **Flag colors**: Integrated throughout the design
 - **Local landmarks**: Represented in illustrations
 - **Kigali landscape**: Featured in hero illustration
 
-## 📊 Performance Considerations
+##  Performance Considerations
 - All images are SVG format (small file sizes)
 - Inline SVG for instant loading
 - CSS animations use GPU acceleration
 - No external image dependencies
 
-## 🔄 Future Enhancements
+##  Future Enhancements
 - [ ] Add more Kigali landmark illustrations
 - [ ] Create animated onboarding screens
 - [ ] Add micro-interactions for better UX
 - [ ] Implement dark mode optimized images
 - [ ] Add more Imigongo pattern variations
 
-## 📝 Notes
+##  Notes
 - All SVG files are hand-crafted and optimized
 - Colors match Rwanda's national identity
 - Illustrations are culturally appropriate
