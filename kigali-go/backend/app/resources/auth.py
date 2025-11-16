@@ -95,19 +95,31 @@ def register():
             db.session.add(email_token)
             db.session.commit()
             
-            # Send verification email (in dev, return token)
-            if current_app.config.get('DEBUG', False):
-                current_app.logger.info(f'Verification token for {user.email}: {verification_token}')
-                return jsonify({
-                    'message': 'Verification email sent',
-                    'dev_token': verification_token  # Only in development
-                }), 201
-            else:
-                try:
-                    send_verification_email(user.email, verification_token)
-                except Exception as email_error:
-                    current_app.logger.warning(f'Could not send verification email: {email_error}')
-                return jsonify({'message': 'Verification email sent'}), 201
+            # Send verification email
+            verification_url = f"{current_app.config.get('FRONTEND_URL', 'https://go-kigali.vercel.app')}/verify-email?token={verification_token}"
+            
+            # Try to send email via email service
+            email_sent = False
+            try:
+                send_verification_email(user.email, verification_token)
+                email_sent = True
+            except Exception as email_error:
+                current_app.logger.warning(f'Could not send verification email: {email_error}')
+            
+            # Always return token in response for now (until email service is fully configured)
+            # In production, you can remove the token from response once email is working
+            response_data = {
+                'message': 'Account created successfully! Please check your email to verify your account.',
+                'verification_url': verification_url,
+                'verification_token': verification_token,  # Temporary: remove once email works
+                'email_sent': email_sent
+            }
+            
+            # Log verification URL for debugging
+            current_app.logger.info(f'Verification token for {user.email}: {verification_token}')
+            current_app.logger.info(f'Verification URL: {verification_url}')
+            
+            return jsonify(response_data), 201
         except NameError:
             # EmailVerificationToken model not available, skip email verification
             current_app.logger.warning('EmailVerificationToken model not available, skipping email verification')
