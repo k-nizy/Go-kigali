@@ -1,6 +1,6 @@
-# 👀 Visual Guide - KigaliGo Auth Integration
+#  Visual Guide - KigaliGo Auth Integration
 
-## 🏠 Home Page Views
+##  Home Page Views
 
 ### View 1: Unauthenticated User (Default)
 
@@ -35,7 +35,7 @@
 ║              Welcome to KigaliGo                         ║
 ║        Your smarter way to explore Kigali                ║
 ║                                                          ║
-║            Welcome back, Kevin! 👋                       ║
+║            Welcome back, Kevin!                       ║
 ║                                                          ║
 ║     ┌────────────────────┐    ┌──────────────┐         ║
 ║     │ 📊 Go to Dashboard │    │ 🗺️ View Map  │         ║
@@ -52,7 +52,7 @@
 
 ---
 
-## 📱 Mobile Navigation
+##  Mobile Navigation
 
 ### Unauthenticated:
 
@@ -103,7 +103,7 @@ Click avatar → Opens menu:
 
 ---
 
-## 🎨 Button States
+##  Button States
 
 ### Sign In Button:
 
@@ -141,7 +141,7 @@ Click avatar → Opens menu:
 
 ---
 
-## 🔄 User Flow Diagram
+##  User Flow Diagram
 
 ```
 START
@@ -171,7 +171,7 @@ END
 
 ---
 
-## 🎯 Click Targets
+##  Click Targets
 
 ### Home Page Buttons:
 
@@ -194,7 +194,7 @@ Mobile:
 
 ---
 
-## 🌈 Color Palette
+##  Color Palette
 
 ### Light Mode:
 - **Background**: #F9FAFB (light gray)
@@ -210,7 +210,7 @@ Mobile:
 
 ---
 
-## 📐 Spacing Guide
+##  Spacing Guide
 
 ```
 Hero Section:
@@ -229,7 +229,7 @@ Hero Section:
 
 ---
 
-## 🎬 Animation Timeline
+##  Animation Timeline
 
 ```
 Page Load:
@@ -251,7 +251,7 @@ Button Click:
 
 ---
 
-## 📱 Responsive Breakpoints
+##  Responsive Breakpoints
 
 ```
 Mobile (< 600px):
@@ -272,7 +272,7 @@ Desktop (> 960px):
 
 ---
 
-## ✨ Interactive Elements
+##  Interactive Elements
 
 ### Hover States:
 1. **Buttons**: Scale + Shadow
@@ -291,7 +291,7 @@ Desktop (> 960px):
 
 ---
 
-## 🎊 Final Result
+##  Final Result
 
 ```
 ┌──────────────────────────────────────────────────────┐
