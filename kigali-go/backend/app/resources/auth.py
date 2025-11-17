@@ -101,10 +101,15 @@ def register():
             # Try to send email via email service
             email_sent = False
             try:
-                send_verification_email(user.email, verification_token)
-                email_sent = True
+                email_sent = send_verification_email(user.email, verification_token)
+                if email_sent:
+                    current_app.logger.info(f'Verification email sent successfully to {user.email}')
+                else:
+                    current_app.logger.warning(f'Verification email not sent to {user.email} - check SMTP/Resend configuration')
             except Exception as email_error:
-                current_app.logger.warning(f'Could not send verification email: {email_error}')
+                current_app.logger.error(f'Error sending verification email: {email_error}')
+                import traceback
+                current_app.logger.error(f'Traceback: {traceback.format_exc()}')
             
             # Always return token in response for now (until email service is fully configured)
             # In production, you can remove the token from response once email is working

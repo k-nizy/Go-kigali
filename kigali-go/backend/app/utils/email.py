@@ -229,7 +229,7 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str) -> bool:
     """
     try:
         mail_server = current_app.config.get('MAIL_SERVER', '')
-        mail_port = current_app.config.get('MAIL_PORT', 587)
+        mail_port = int(current_app.config.get('MAIL_PORT', 587))
         mail_username = current_app.config.get('MAIL_USERNAME', '')
         mail_password = current_app.config.get('MAIL_PASSWORD', '')
         mail_use_tls = current_app.config.get('MAIL_USE_TLS', True)
@@ -237,8 +237,15 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str) -> bool:
         
         # Check if SMTP is configured
         if not mail_server or not mail_username or not mail_password:
-            logger.debug("SMTP not configured, skipping email send")
+            logger.warning(f"SMTP not fully configured - Server: {bool(mail_server)}, Username: {bool(mail_username)}, Password: {bool(mail_password)}")
             return False
+        
+        logger.info(f"Attempting to send email via SMTP to {to_email} using {mail_server}:{mail_port}")
+        
+        # Extract email from sender if it's in format "Name <email@domain.com>"
+        sender_email = mail_sender
+        if '<' in mail_sender and '>' in mail_sender:
+            sender_email = mail_sender.split('<')[1].split('>')[0].strip()
         
         # Create message
         msg = MIMEMultipart('alternative')
@@ -251,19 +258,34 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str) -> bool:
         msg.attach(html_part)
         
         # Send email
+        logger.info(f"Connecting to SMTP server {mail_server}:{mail_port} (TLS: {mail_use_tls})")
         if mail_use_tls:
-            server = smtplib.SMTP(mail_server, mail_port)
+            server = smtplib.SMTP(mail_server, mail_port, timeout=30)
+            server.set_debuglevel(0)  # Set to 1 for verbose debugging
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(mail_server, mail_port)
+            server = smtplib.SMTP_SSL(mail_server, mail_port, timeout=30)
+            server.set_debuglevel(0)
         
+        logger.info(f"Logging in with username: {mail_username}")
         server.login(mail_username, mail_password)
+        
+        logger.info(f"Sending email from {sender_email} to {to_email}")
         server.send_message(msg)
         server.quit()
         
-        logger.info(f"Email sent successfully to {to_email} via SMTP")
+        logger.info(f"Email sent successfully to {to_email} via SMTP ({mail_server})")
         return True
         
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"SMTP Authentication failed: {str(e)}")
+        logger.error(f"Check your MAIL_USERNAME and MAIL_PASSWORD")
+        return False
+    except smtplib.SMTPException as e:
+        logger.error(f"SMTP error: {str(e)}")
+        return False
     except Exception as e:
-        logger.error(f"Error sending email via SMTP: {str(e)}")
+        logger.error(f"Error sending email via SMTP: {type(e).__name__}: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False
