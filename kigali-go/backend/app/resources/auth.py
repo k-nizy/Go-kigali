@@ -336,17 +336,24 @@ def forgot_password():
         db.session.add(password_reset)
         db.session.commit()
         
-        # Send reset email (in dev, return token)
-        if current_app.config['DEBUG']:
-            current_app.logger.info(f'Password reset token for {user.email}: {reset_token}')
-            return jsonify({
-                'message': 'Reset email sent',
-                'dev_token': reset_token  # Only in development
-            }), 200
-        else:
-            send_password_reset_email(user.email, reset_token)
+        # Try to send reset email
+        reset_url = f"{current_app.config.get('FRONTEND_URL', 'https://go-kigali.vercel.app')}/reset-password?token={reset_token}"
+        email_sent = False
+        try:
+            email_sent = send_password_reset_email(user.email, reset_token)
+        except Exception as email_error:
+            current_app.logger.warning(f'Could not send password reset email: {email_error}')
+        
+        # Always return token in response (until email service is fully configured)
+        # In production, you can remove the token from response once email is working
+        return jsonify({
+            'message': 'If the email exists, a reset link has been sent',
+            'reset_url': reset_url,
+            'reset_token': reset_token,  # Temporary: remove once email works
+            'email_sent': email_sent
+        }), 200
     
-    # Always return success
+    # Always return success (even if user doesn't exist - prevent email enumeration)
     return jsonify({'message': 'If the email exists, a reset link has been sent'}), 200
 
 

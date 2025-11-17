@@ -79,7 +79,12 @@ def send_verification_email(email: str, token: str) -> bool:
                 logger.info(f"Verification email sent successfully to {email} via Resend")
                 return True
             else:
-                logger.error(f"Resend API error: {response.status_code} - {response.text}")
+                # Log error but don't fail - token will be returned in response
+                error_data = response.json() if response.text else {}
+                error_msg = error_data.get('message', response.text)
+                logger.warning(f"Resend API error ({response.status_code}): {error_msg}")
+                logger.warning(f"Email not sent, but verification token will be returned in API response")
+                # Return False so caller knows email wasn't sent, but registration still succeeds
                 return False
                 
         except Exception as e:
@@ -162,7 +167,11 @@ def send_password_reset_email(email: str, token: str) -> bool:
                 logger.info(f"Password reset email sent successfully to {email} via Resend")
                 return True
             else:
-                logger.error(f"Resend API error: {response.status_code} - {response.text}")
+                # Log error but don't fail - token will be returned in response
+                error_data = response.json() if response.text else {}
+                error_msg = error_data.get('message', response.text)
+                logger.warning(f"Resend API error ({response.status_code}): {error_msg}")
+                logger.warning(f"Email not sent, but reset token will be returned in API response")
                 return False
                 
         except Exception as e:

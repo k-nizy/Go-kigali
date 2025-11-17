@@ -1,176 +1,178 @@
 # 📧 Email Verification Setup Guide
 
-## ✅ Quick Fix (Works Now!)
+## ⚠️ Important: Domain Verification Required
 
-After registration, the API response now includes your verification token. You can verify your email immediately:
+**Resend's free tier requires domain verification to send emails to any recipient.** Without a verified domain, you can only send emails to your own account email address.
 
-1. **After registering**, check the API response - it includes:
-   - `verification_url`: Direct link to verify
+## ✅ Current Solution (Works Now!)
+
+The app is configured to **always return verification tokens in the API response**. This means:
+
+1. **After registration**, the API response includes:
+   - `verification_url`: Direct link to verify your email
    - `verification_token`: Token to use manually
-   - `email_sent`: Whether email was actually sent
+   - `email_sent`: `false` (until domain is verified)
 
-2. **Verify your email** by visiting:
+2. **To verify your email**, use the `verification_url` from the response or visit:
    ```
    https://go-kigali.vercel.app/verify-email?token=YOUR_TOKEN_HERE
    ```
 
-3. **Or use the verification URL** from the response directly.
+3. **For password reset**, the API also returns the reset token in the response.
 
 ---
 
-## 🚀 Proper Email Setup (Recommended)
+## 🚀 Enable Real Email Sending (Required for Production)
 
-To enable **actual email sending**, set up Resend API:
+To send actual emails to users, you **must verify a domain** in Resend:
 
-### Step 1: Get Resend API Key
+### Step 1: Verify Your Domain in Resend
 
-1. Go to [https://resend.com](https://resend.com)
-2. Sign up for a free account (3,000 emails/month free)
-3. Go to **API Keys** section
-4. Create a new API key
-5. Copy the API key (starts with `re_...`)
+1. Go to [https://resend.com/domains](https://resend.com/domains)
+2. Click **"Add Domain"**
+3. Enter your domain (e.g., `kigaligo.com` or `yourdomain.com`)
+4. Resend will provide DNS records to add:
+   - **SPF record** (TXT)
+   - **DKIM record** (TXT)
+   - **DMARC record** (TXT) - optional but recommended
 
-### Step 2: Add to Vercel Environment Variables
+5. **Add these DNS records** to your domain's DNS settings:
+   - Go to your domain registrar (GoDaddy, Namecheap, etc.)
+   - Find DNS settings
+   - Add the TXT records provided by Resend
+   - Wait 5-15 minutes for DNS propagation
 
-1. Go to your Vercel project: https://vercel.com/dashboard
-2. Click on your project: **go-kigali**
-3. Go to **Settings** → **Environment Variables**
-4. Add a new variable:
-   - **Name**: `RESEND_API_KEY`
-   - **Value**: `re_your_api_key_here` (paste your Resend API key)
-   - **Environment**: Production, Preview, Development (select all)
-5. Click **Save**
+6. **Return to Resend** and click **"Verify"**
+7. Wait for verification (usually takes a few minutes)
 
-### Step 3: Verify Domain (Optional but Recommended)
+### Step 2: Update Vercel Environment Variables
 
-For production, you should verify your domain:
+Once your domain is verified:
 
-1. In Resend dashboard, go to **Domains**
-2. Add your domain (e.g., `kigaligo.com`)
-3. Add the DNS records they provide
-4. Wait for verification (usually a few minutes)
+1. Go to Vercel → Your Project → **Settings** → **Environment Variables**
+2. Add/Update:
+   - **Name**: `MAIL_DEFAULT_SENDER`
+   - **Value**: `KigaliGo <noreply@yourdomain.com>` (use your verified domain)
+   - **Environment**: Production, Preview, Development
+3. Click **Save**
 
-**For testing**, you can use Resend's default domain which works immediately.
+### Step 3: Redeploy
 
-### Step 4: Redeploy
+1. Go to Vercel → **Deployments**
+2. Click **Redeploy** on the latest deployment
+3. Wait 2-3 minutes for deployment
 
-After adding the environment variable:
+### Step 4: Test
 
-1. Go to Vercel dashboard
-2. Click **Deployments**
-3. Click **Redeploy** on the latest deployment
-4. Or push a new commit to trigger redeployment
+1. Register a new account
+2. Check your email inbox (not spam folder)
+3. You should receive the verification email
+4. Check Vercel logs - should see: `"Verification email sent successfully"`
 
 ---
 
 ## 📝 Email Configuration
 
-### Default Sender (Works Immediately) ✅
+### Current Default (No Domain Verification)
 
-By default, the app uses **Resend's default domain** (`onboarding@resend.dev`), which allows sending to **any email address** without domain verification. This works right away - no setup needed!
+- **Sender**: `KigaliGo <onboarding@resend.dev>`
+- **Status**: ❌ **Does NOT work** - Resend requires domain verification
+- **Result**: Emails fail with 403 error, but tokens are returned in API response
 
-**Emails will come from:** `KigaliGo <onboarding@resend.dev>`
+### After Domain Verification
 
-### Custom Sender (Optional)
-
-If you want to use your own domain (e.g., `support@kigaligo.com`):
-
-1. **Verify your domain in Resend**:
-   - Go to Resend dashboard → **Domains**
-   - Add your domain (e.g., `kigaligo.com`)
-   - Add the DNS records they provide
-   - Wait for verification
-
-2. **Set custom sender in Vercel**:
-   - Add environment variable:
-     - **Name**: `MAIL_DEFAULT_SENDER`
-     - **Value**: `KigaliGo <support@yourdomain.com>`
-     - **Note**: Must use a verified domain in Resend
-
----
-
-## 🧪 Testing
-
-### Test 1: Registration with Email
-
-1. Register a new account
-2. Check the API response - it should show `email_sent: true` if Resend is configured
-3. Check your email inbox for the verification email
-4. Click the verification link
-
-### Test 2: Check Vercel Logs
-
-If emails aren't being sent:
-
-1. Go to Vercel dashboard → **Deployments** → Click on latest deployment
-2. Go to **Functions** tab
-3. Check the logs for email-related errors
-4. Look for: `"Verification email sent successfully"` or error messages
+- **Sender**: `KigaliGo <noreply@yourdomain.com>` (your verified domain)
+- **Status**: ✅ **Works** - Can send to any email address
+- **Result**: Real emails are sent successfully
 
 ---
 
 ## 🔧 Troubleshooting
 
+### Error: "403 - You can only send testing emails to your own email address"
+
+**Cause**: Domain not verified in Resend
+
+**Solution**: 
+1. Verify your domain in Resend (see Step 1 above)
+2. Set `MAIL_DEFAULT_SENDER` to use your verified domain
+3. Redeploy
+
 ### Emails Not Sending?
 
-1. **Check RESEND_API_KEY is set**:
-   - Go to Vercel → Settings → Environment Variables
-   - Verify `RESEND_API_KEY` exists and is correct
+1. **Check domain verification**:
+   - Go to Resend dashboard → Domains
+   - Ensure your domain shows "Verified" status
+   - If not verified, check DNS records are correct
 
-2. **Check Resend Dashboard**:
+2. **Check Vercel environment variables**:
+   - Verify `RESEND_API_KEY` is set correctly
+   - Verify `MAIL_DEFAULT_SENDER` uses your verified domain
+
+3. **Check Vercel logs**:
+   - Look for: `"Verification email sent successfully"` (success)
+   - Look for: `"Resend API error"` (failure)
+   - Check error messages for details
+
+4. **Check Resend dashboard**:
    - Go to https://resend.com/emails
    - See if emails are being sent
-   - Check for any error messages
+   - Check for error messages
 
-3. **Check Vercel Logs**:
-   - Look for error messages about Resend API
-   - Common errors:
-     - `401 Unauthorized`: Invalid API key
-     - `403 Forbidden`: Domain not verified
-     - `422 Unprocessable`: Invalid email format
+### Still Getting 403 Errors?
 
-### Still Using Token in Response?
-
-The registration endpoint currently returns the verification token in the response as a **temporary measure**. Once email is working reliably, you can remove it for security.
-
-To remove the token from response:
-- Edit `backend/app/resources/auth.py`
-- Remove `'verification_token': verification_token` from the response
+- ✅ **Tokens are always returned in API response** - users can verify manually
+- ✅ **Registration still succeeds** - email failure doesn't block signup
+- ⚠️ **To enable real emails**: Verify domain in Resend (required)
 
 ---
 
-## 📚 Alternative Email Services
+## 📚 Alternative Solutions
 
-If you prefer a different email service:
+If you don't want to verify a domain, consider:
 
-### SendGrid
-- Free tier: 100 emails/day
-- Update `send_verification_email()` to use SendGrid API
+### Option 1: Use a Different Email Service
 
-### AWS SES
-- Very cheap ($0.10 per 1,000 emails)
-- Requires AWS account setup
+- **SendGrid**: Free tier (100 emails/day), easier setup
+- **AWS SES**: Very cheap, requires AWS account
+- **Mailgun**: Free tier (5,000 emails/month)
 
-### Mailgun
-- Free tier: 5,000 emails/month
-- Good for production use
+### Option 2: Use Your Own SMTP Server
+
+- Configure Gmail SMTP (requires app password)
+- Configure custom SMTP server
+- Update `MAIL_SERVER`, `MAIL_USERNAME`, `MAIL_PASSWORD` in config
+
+### Option 3: Keep Current Setup (Manual Verification)
+
+- Users get tokens in API response
+- They can verify manually using the verification URL
+- No email service needed
+- Works immediately, but less user-friendly
 
 ---
 
 ## ✅ Summary
 
-**Right Now:**
-- ✅ Registration returns verification token in response
-- ✅ You can verify immediately using the token
-- ⚠️ No actual emails sent (until Resend is configured)
+**Current Status:**
+- ✅ Registration works - tokens returned in response
+- ✅ Users can verify email manually using the token
+- ❌ Real emails not sent (domain verification required)
+- ✅ App continues to work even when emails fail
 
-**After Resend Setup:**
-- ✅ Real emails sent to users
-- ✅ Professional email templates
-- ✅ Better user experience
-- ✅ More secure (no tokens in API responses)
+**To Enable Real Emails:**
+1. Verify domain in Resend (required)
+2. Set `MAIL_DEFAULT_SENDER` to verified domain
+3. Redeploy
+
+**For Now:**
+- Users can verify using the `verification_url` from the API response
+- No email service needed for basic functionality
+- Email sending is optional enhancement
 
 ---
 
-**Need Help?** Check Vercel logs or Resend dashboard for detailed error messages.
-
+**Need Help?** 
+- Check Vercel logs for detailed error messages
+- Check Resend dashboard for email status
+- Verify DNS records are correct if domain verification fails
