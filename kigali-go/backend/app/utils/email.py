@@ -29,10 +29,12 @@ def send_verification_email(email: str, token: str) -> bool:
             # Use Resend's default domain if no custom sender is configured
             # This allows sending to any email without domain verification
             default_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
-            if not default_sender or '@kigaligo.com' in default_sender or '@resend.dev' not in default_sender:
+            # If sender is not set or uses the default unverified domain, use Resend's default
+            if not default_sender or default_sender == 'noreply@kigaligo.com' or '@kigaligo.com' in default_sender:
                 # Use Resend's default domain (works without verification)
                 from_email = 'KigaliGo <onboarding@resend.dev>'
             else:
+                # Use the custom sender (must be a verified domain in Resend)
                 from_email = default_sender
             
             response = requests.post(
@@ -110,10 +112,12 @@ def send_password_reset_email(email: str, token: str) -> bool:
         try:
             # Use Resend's default domain if no custom sender is configured
             default_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
-            if not default_sender or '@kigaligo.com' in default_sender or '@resend.dev' not in default_sender:
+            # If sender is not set or uses the default unverified domain, use Resend's default
+            if not default_sender or default_sender == 'noreply@kigaligo.com' or '@kigaligo.com' in default_sender:
                 # Use Resend's default domain (works without verification)
                 from_email = 'KigaliGo <onboarding@resend.dev>'
             else:
+                # Use the custom sender (must be a verified domain in Resend)
                 from_email = default_sender
             
             response = requests.post(
