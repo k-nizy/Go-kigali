@@ -26,6 +26,15 @@ def send_verification_email(email: str, token: str) -> bool:
     resend_api_key = os.getenv('RESEND_API_KEY')
     if resend_api_key:
         try:
+            # Use Resend's default domain if no custom sender is configured
+            # This allows sending to any email without domain verification
+            default_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+            if not default_sender or '@kigaligo.com' in default_sender or '@resend.dev' not in default_sender:
+                # Use Resend's default domain (works without verification)
+                from_email = 'KigaliGo <onboarding@resend.dev>'
+            else:
+                from_email = default_sender
+            
             response = requests.post(
                 'https://api.resend.com/emails',
                 headers={
@@ -33,7 +42,7 @@ def send_verification_email(email: str, token: str) -> bool:
                     'Content-Type': 'application/json'
                 },
                 json={
-                    'from': current_app.config.get('MAIL_DEFAULT_SENDER', 'KigaliGo <noreply@kigaligo.com>'),
+                    'from': from_email,
                     'to': [email],
                     'subject': 'Verify your KigaliGo account',
                     'html': f'''
@@ -99,6 +108,14 @@ def send_password_reset_email(email: str, token: str) -> bool:
     resend_api_key = os.getenv('RESEND_API_KEY')
     if resend_api_key:
         try:
+            # Use Resend's default domain if no custom sender is configured
+            default_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+            if not default_sender or '@kigaligo.com' in default_sender or '@resend.dev' not in default_sender:
+                # Use Resend's default domain (works without verification)
+                from_email = 'KigaliGo <onboarding@resend.dev>'
+            else:
+                from_email = default_sender
+            
             response = requests.post(
                 'https://api.resend.com/emails',
                 headers={
@@ -106,7 +123,7 @@ def send_password_reset_email(email: str, token: str) -> bool:
                     'Content-Type': 'application/json'
                 },
                 json={
-                    'from': current_app.config.get('MAIL_DEFAULT_SENDER', 'KigaliGo <noreply@kigaligo.com>'),
+                    'from': from_email,
                     'to': [email],
                     'subject': 'Reset your KigaliGo password',
                     'html': f'''
