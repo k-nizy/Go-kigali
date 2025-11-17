@@ -115,9 +115,7 @@ def register():
                 'email_sent': email_sent
             }
             
-            # Log verification URL for debugging
-            current_app.logger.info(f'Verification token for {user.email}: {verification_token}')
-            current_app.logger.info(f'Verification URL: {verification_url}')
+            # Verification URL and token are returned in response
             
             return jsonify(response_data), 201
         except NameError:

@@ -79,22 +79,16 @@ def send_verification_email(email: str, token: str) -> bool:
                 logger.info(f"Verification email sent successfully to {email} via Resend")
                 return True
             else:
-                # Log error but don't fail - token will be returned in response
-                error_data = response.json() if response.text else {}
-                error_msg = error_data.get('message', response.text)
-                logger.warning(f"Resend API error ({response.status_code}): {error_msg}")
-                logger.warning(f"Email not sent, but verification token will be returned in API response")
-                # Return False so caller knows email wasn't sent, but registration still succeeds
+                # Silently fail - token will be returned in response
+                # Don't log warnings to reduce log noise
                 return False
                 
         except Exception as e:
             logger.error(f"Error sending email via Resend: {str(e)}")
             return False
     
-    # Fallback: Log the URL (for development or when Resend is not configured)
-    logger.info(f"Verification email would be sent to {email}")
-    logger.info(f"Verification URL: {verification_url}")
-    logger.warning("RESEND_API_KEY not set - email not actually sent. Set RESEND_API_KEY in environment variables to enable email sending.")
+    # Fallback: When Resend is not configured, silently return False
+    # Token will be returned in API response
     return False
 
 
@@ -167,19 +161,14 @@ def send_password_reset_email(email: str, token: str) -> bool:
                 logger.info(f"Password reset email sent successfully to {email} via Resend")
                 return True
             else:
-                # Log error but don't fail - token will be returned in response
-                error_data = response.json() if response.text else {}
-                error_msg = error_data.get('message', response.text)
-                logger.warning(f"Resend API error ({response.status_code}): {error_msg}")
-                logger.warning(f"Email not sent, but reset token will be returned in API response")
+                # Silently fail - token will be returned in response
+                # Don't log warnings to reduce log noise
                 return False
                 
         except Exception as e:
             logger.error(f"Error sending email via Resend: {str(e)}")
             return False
     
-    # Fallback: Log the URL
-    logger.info(f"Password reset email would be sent to {email}")
-    logger.info(f"Reset URL: {reset_url}")
-    logger.warning("RESEND_API_KEY not set - email not actually sent.")
+    # Fallback: When Resend is not configured, silently return False
+    # Token will be returned in API response
     return False
