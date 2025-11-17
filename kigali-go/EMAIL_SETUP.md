@@ -65,18 +65,27 @@ After adding the environment variable:
 
 ## 📝 Email Configuration
 
-The email sender is configured in `backend/app/config.py`:
+### Default Sender (Works Immediately) ✅
 
-```python
-MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'KigaliGo <noreply@kigaligo.com>')
-```
+By default, the app uses **Resend's default domain** (`onboarding@resend.dev`), which allows sending to **any email address** without domain verification. This works right away - no setup needed!
 
-To change the sender email:
+**Emails will come from:** `KigaliGo <onboarding@resend.dev>`
 
-1. Add to Vercel environment variables:
-   - **Name**: `MAIL_DEFAULT_SENDER`
-   - **Value**: `KigaliGo <your-verified-email@yourdomain.com>`
-   - **Note**: Must be a verified email/domain in Resend
+### Custom Sender (Optional)
+
+If you want to use your own domain (e.g., `support@kigaligo.com`):
+
+1. **Verify your domain in Resend**:
+   - Go to Resend dashboard → **Domains**
+   - Add your domain (e.g., `kigaligo.com`)
+   - Add the DNS records they provide
+   - Wait for verification
+
+2. **Set custom sender in Vercel**:
+   - Add environment variable:
+     - **Name**: `MAIL_DEFAULT_SENDER`
+     - **Value**: `KigaliGo <support@yourdomain.com>`
+     - **Note**: Must use a verified domain in Resend
 
 ---
 
