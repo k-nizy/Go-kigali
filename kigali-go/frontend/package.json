@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "KigaliGo - Passenger-first transport app frontend",
   "private": true,
+  "env": {
+    "APP_VERSION": "1.0.0"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
