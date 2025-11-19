@@ -1,4 +1,4 @@
-"""
+""
 Seed database with realistic stops in Kigali
 Run this script to populate stops data
 """
