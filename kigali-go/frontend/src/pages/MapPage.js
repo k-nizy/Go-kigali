@@ -1,113 +1,418 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Map Page with Google Maps Integration
+ * Displays vehicles, stops, and user location on Google Maps
+ */
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Container, Typography, Paper, Button, Grid, Avatar, Chip, CircularProgress } from '@mui/material';
-import { MyLocation, Refresh, DirectionsBus, DirectionsCar, TwoWheeler, LocationOn } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import L from 'leaflet';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Button,
+  Grid,
+  Avatar,
+  Chip,
+  CircularProgress,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@mui/material';
+import {
+  MyLocation,
+  Refresh,
+  DirectionsBus,
+  DirectionsCar,
+  TwoWheeler,
+  LocationOn,
+  FilterList,
+} from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 import { useThemeMode } from '../ThemeContext';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for default marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-});
-
-const createVehicleIcon = (type, color) => {
-  return L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-      <span style="color: white; font-size: 16px;">${type === 'bus' ? '🚌' : type === 'taxi' ? '🚗' : '🏍️'}</span>
-    </div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-  });
-};
+import GoogleMapsLoader from '../components/map/GoogleMapsLoader';
+import GoogleMapContainer from '../components/map/GoogleMapContainer';
+import VehicleMarker from '../components/map/VehicleMarker';
+import StopMarker from '../components/map/StopMarker';
+import UserLocationMarker from '../components/map/UserLocationMarker';
+import { apiService } from '../services/api';
+import { getDefaultMapCenter, getVehicleColor } from '../utils/googleMapsUtils';
+import useRealtimeVehicles from '../hooks/useRealtimeVehicles';
 
 const MapPage = () => {
   const { t } = useTranslation();
   const { mode } = useThemeMode();
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [map, setMap] = useState(null);
+  const [stops, setStops] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
-  const [mapCenter] = useState({ lat: -1.9441, lng: 30.0619 });
+  const [mapCenter, setMapCenter] = useState(getDefaultMapCenter());
+  const [loading, setLoading] = useState(false);
+  const [stopsLoading, setStopsLoading] = useState(false);
+  const [showStops, setShowStops] = useState(true);
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState('all');
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds default (reduced to avoid rate limits)
+  const [vehiclesState, setVehiclesState] = useState([]); // Local state for vehicles
 
-  const getVehicleColor = (type) => {
-    switch (type) {
-      case 'bus': return '#2E77D0';
-      case 'taxi': return '#E22134';
-      case 'moto': return '#FFA726';
-      default: return '#6B7280';
+  // Always use a valid location (userLocation or mapCenter)
+  const currentLocation = userLocation || mapCenter;
+
+  // Real-time vehicle tracking hook
+  const {
+    vehicles: hookVehicles,
+    loading: vehiclesLoading,
+    error: vehiclesError,
+    lastUpdate,
+    refresh: refreshVehicles,
+  } = useRealtimeVehicles({
+    location: currentLocation,
+    radius: 5.0,
+    vehicleType: vehicleTypeFilter !== 'all' ? vehicleTypeFilter : null,
+    interval: refreshInterval,
+    enabled: realtimeEnabled && !!(currentLocation?.lat && currentLocation?.lng),
+  });
+
+  // Merge hook vehicles with local state (hook takes priority)
+  // Only use local state if hook hasn't loaded anything yet
+  const vehicles = hookVehicles.length > 0 ? hookVehicles : (vehiclesState.length > 0 ? vehiclesState : []);
+
+  // Force initial vehicle load on mount (even if realtime is off)
+  useEffect(() => {
+    const loadInitialVehicles = async () => {
+      const location = currentLocation;
+      if (!location?.lat || !location?.lng) {
+        console.log('No location for initial vehicle load');
+        return;
+      }
+
+      console.log('Loading initial vehicles...', { location });
+      
+      try {
+        const response = await fetch(
+          `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=5`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Initial vehicles loaded:', data.vehicles?.length || 0, data);
+          if (data.vehicles && data.vehicles.length > 0) {
+            setVehiclesState(data.vehicles);
+            // Removed toast notification as requested
+          } else {
+            console.warn('No vehicles in response');
+          }
+        } else {
+          console.error('Failed to load vehicles:', response.status);
+        }
+      } catch (err) {
+        console.error('Error loading initial vehicles:', err);
+      }
+    };
+
+    // Load after a short delay to ensure map is ready
+    const timer = setTimeout(loadInitialVehicles, 500);
+    return () => clearTimeout(timer);
+  }, []); // Only run once on mount
+
+  // Debug: Log vehicles state
+  useEffect(() => {
+    const vehiclesWithCoords = vehicles.filter(v => v && v.current_lat != null && v.current_lng != null);
+    console.log('Vehicles state:', {
+      total: vehicles.length,
+      withCoords: vehiclesWithCoords.length,
+      loading: vehiclesLoading,
+      error: vehiclesError,
+      location: currentLocation,
+      realtimeEnabled,
+      mapReady: !!map,
+    });
+    if (vehiclesWithCoords.length > 0 && map) {
+      console.log('Vehicles ready for rendering:', vehiclesWithCoords.map(v => ({
+        id: v.id,
+        type: v.vehicle_type,
+        lat: v.current_lat,
+        lng: v.current_lng
+      })));
     }
-  };
+  }, [vehicles, vehiclesLoading, vehiclesError, currentLocation, realtimeEnabled, map]);
+
+  // Get user's current location (one-time)
+  const getCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserLocation(location);
+        setMapCenter(location);
+        if (map) {
+          map.setCenter(location);
+          map.setZoom(14);
+        }
+        toast.success('Location found!');
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Could not get your location. Please enable location services.');
+        setLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, [map]);
+
+  // Continuous location tracking (watchPosition)
+  useEffect(() => {
+    if (!realtimeEnabled || !navigator.geolocation) {
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserLocation(location);
+        setMapCenter(location);
+        if (map) {
+          map.setCenter(location);
+        }
+      },
+      (error) => {
+        console.error('Geolocation watch error:', error);
+        // Don't show error toast for watchPosition, just log
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+
+    // Cleanup
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [realtimeEnabled, map]);
+
+  // Manual refresh function (for button click)
+  const handleManualRefresh = useCallback(async () => {
+    console.log('Manual refresh triggered', { currentLocation, realtimeEnabled, vehiclesCount: vehicles.length });
+    
+    // Force refresh even if realtime is disabled
+    if (currentLocation?.lat && currentLocation?.lng) {
+      try {
+        const response = await fetch(
+          `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(currentLocation.lat)}&lng=${encodeURIComponent(currentLocation.lng)}&radius=5`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Manual refresh loaded:', data.vehicles?.length || 0, 'vehicles');
+          if (data.vehicles && data.vehicles.length > 0) {
+            setVehiclesState(data.vehicles);
+          } else {
+            setVehiclesState([]);
+          }
+        }
+      } catch (err) {
+        console.error('Manual refresh failed:', err);
+      }
+    }
+    
+    refreshVehicles();
+    if (showStops) {
+      fetchStops();
+    }
+  }, [refreshVehicles, showStops, currentLocation, realtimeEnabled, vehicles.length]);
+
+  // Fetch nearby stops with ETA
+  const fetchStops = useCallback(async () => {
+    const location = userLocation || mapCenter;
+    if (!location || !location.lat || !location.lng) {
+      console.warn('No location available for fetching stops', { userLocation, mapCenter });
+      toast.error('Please enable location to see stops');
+      return;
+    }
+
+    console.log('Fetching stops for location:', location);
+    setStopsLoading(true);
+    try {
+      // Use stops with ETA endpoint for real-time data
+      const response = await apiService.stops.getWithETA(
+        location.lat,
+        location.lng,
+        2.0 // 2km radius
+      );
+
+      console.log('Stops API response:', response.data);
+      
+      if (response.data && response.data.stops) {
+        setStops(response.data.stops);
+        if (response.data.stops.length === 0) {
+          console.log('No stops found in radius');
+          toast('No stops found nearby. Try increasing the search radius.');
+        } else {
+          console.log(`Loaded ${response.data.stops.length} stops`);
+        }
+      } else {
+        console.warn('No stops data in response', response);
+        setStops([]);
+      }
+    } catch (error) {
+      console.error('Error fetching stops with ETA:', error);
+      
+      // Handle rate limiting (429 errors) - don't retry immediately
+      if (error.response?.status === 429) {
+        console.warn('Rate limited on stops endpoint, skipping retry');
+        setStopsLoading(false);
+        return;
+      }
+      
+      // Fallback to regular stops endpoint if ETA endpoint fails
+      try {
+        const fallbackResponse = await apiService.stops.getNearby(
+          location.lat,
+          location.lng,
+          2.0
+        );
+        if (fallbackResponse.data && fallbackResponse.data.stops) {
+          setStops(fallbackResponse.data.stops);
+          console.log(`Loaded ${fallbackResponse.data.stops.length} stops from fallback endpoint`);
+        } else {
+          console.warn('No stops found in fallback response');
+          setStops([]);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback stops fetch failed:', fallbackError);
+        const errorMsg = fallbackError.response?.data?.error || fallbackError.message || 'Unknown error';
+        console.error('Error details:', {
+          message: errorMsg,
+          status: fallbackError.response?.status,
+          location: location,
+        });
+        toast.error(`Failed to load stops: ${errorMsg}`);
+        setStops([]);
+      }
+    } finally {
+      setStopsLoading(false);
+    }
+  }, [userLocation, mapCenter]);
+
+  // Initial load
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
+
+  // Fetch stops when location changes or when toggled on (with debounce to avoid rate limits)
+  useEffect(() => {
+    if ((userLocation || mapCenter) && showStops) {
+      // Debounce stop fetching to avoid rate limits
+      const timer = setTimeout(() => {
+        fetchStops();
+      }, 2000); // Wait 2 seconds before fetching
+      return () => clearTimeout(timer);
+    } else if (!showStops) {
+      // Clear stops when toggled off
+      setStops([]);
+    }
+  }, [userLocation, mapCenter, showStops, fetchStops]);
+
+  // Handle map load
+  const handleMapLoad = useCallback((mapInstance) => {
+    setMap(mapInstance);
+    if (userLocation) {
+      mapInstance.setCenter(userLocation);
+      mapInstance.setZoom(14);
+    }
+  }, [userLocation]);
+
+  // Handle vehicle marker click
+  const handleVehicleClick = useCallback((vehicle, marker) => {
+    setSelectedVehicle(vehicle);
+  }, []);
+
+  // Handle stop marker click
+  const handleStopClick = useCallback((stop, marker) => {
+    // Could show stop details in a sidebar or modal
+    console.log('Stop clicked:', stop);
+  }, []);
 
   const getVehicleIcon = (type) => {
     switch (type) {
-      case 'bus': return <DirectionsBus />;
-      case 'taxi': return <DirectionsCar />;
-      case 'moto': return <TwoWheeler />;
-      default: return <LocationOn />;
+      case 'bus':
+        return <DirectionsBus />;
+      case 'taxi':
+        return <DirectionsCar />;
+      case 'moto':
+        return <TwoWheeler />;
+      default:
+        return <LocationOn />;
     }
   };
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          toast.success('Location found!');
-        },
-        () => {
-          toast.error('Could not get your location');
-        }
-      );
-    }
-  };
-
-  const fetchVehicles = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/v1/vehicles');
-      if (response.ok) {
-        const data = await response.json();
-        setVehicles(data.vehicles || []);
-      }
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const filteredVehicles = vehicles.filter((v) => {
+    if (!v) return false;
+    if (vehicleTypeFilter === 'all') return true;
+    return v.vehicle_type === vehicleTypeFilter;
+  });
+  
+  // Debug: Log filtered vehicles for list rendering
   useEffect(() => {
-    fetchVehicles();
-    getCurrentLocation();
-  }, []);
+    console.log('Vehicle list state:', {
+      totalVehicles: vehicles.length,
+      filteredVehicles: filteredVehicles.length,
+      vehicleTypeFilter,
+      loading: vehiclesLoading,
+      error: vehiclesError,
+    });
+    if (filteredVehicles.length > 0) {
+      console.log('Vehicles to display in list:', filteredVehicles.map(v => ({
+        id: v.id,
+        type: v.vehicle_type,
+        registration: v.registration,
+        hasCoords: !!(v.current_lat && v.current_lng)
+      })));
+    }
+  }, [vehicles.length, filteredVehicles.length, vehicleTypeFilter, vehiclesLoading, vehiclesError]);
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 4 }}>
       {/* Hero Section */}
       <Box
         sx={{
-          background: mode === 'dark' 
-            ? 'linear-gradient(135deg, #0D7377 0%, #121212 100%)'
-            : 'linear-gradient(135deg, #0D7377 0%, #14FFEC 100%)',
-          py: 8,
+          background:
+            mode === 'dark'
+              ? 'linear-gradient(135deg, #0D7377 0%, #121212 100%)'
+              : 'linear-gradient(135deg, #0D7377 0%, #14FFEC 100%)',
+          py: 4,
           mb: 4,
         }}
       >
         <Container maxWidth="lg">
-          <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff', mb: 2 }}>
-            {t('map.title')}
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', mb: 1 }}>
+            {t('map.title') || 'Live Transport Map'}
           </Typography>
-          <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-            {userLocation ? t('map.showingVehicles') || 'Showing vehicles near your location' : t('map.noLocation')}
+          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            {userLocation
+              ? t('map.showingVehicles') || 'Showing vehicles and stops near your location'
+              : t('map.noLocation') || 'Enable location to see nearby transport'}
           </Typography>
         </Container>
       </Box>
@@ -115,114 +420,253 @@ const MapPage = () => {
       <Container maxWidth="lg">
         <Grid container spacing={3}>
           {/* Map Container */}
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Paper
               elevation={mode === 'dark' ? 0 : 2}
               sx={{
                 overflow: 'hidden',
                 borderRadius: 2,
                 height: 600,
+                position: 'relative',
               }}
             >
-              <MapContainer
-                center={[mapCenter.lat, mapCenter.lng]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
+              <GoogleMapsLoader>
+                <GoogleMapContainer
+                center={mapCenter}
+                zoom={userLocation ? 14 : 13}
+                onMapLoad={handleMapLoad}
+                mapOptions={{
+                  styles: mode === 'dark' ? [
+                    { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+                    { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+                    { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+                  ] : [],
+                }}
               >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                
+                {/* User Location Marker */}
                 {userLocation && (
-                  <>
-                    <Marker position={[userLocation.lat, userLocation.lng]}>
-                      <Popup>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          Your Location
-                        </Typography>
-                      </Popup>
-                    </Marker>
-                    <Circle
-                      center={[userLocation.lat, userLocation.lng]}
-                      radius={5000}
-                      pathOptions={{ color: '#0D7377', fillColor: '#0D7377', fillOpacity: 0.1 }}
-                    />
-                  </>
+                  <UserLocationMarker
+                    map={map}
+                    position={userLocation}
+                    showRadius={true}
+                    radiusKm={5}
+                  />
                 )}
-                
-                {vehicles.filter(v => v.current_lat && v.current_lng).map((vehicle) => (
-                  <Marker
-                    key={vehicle.id}
-                    position={[vehicle.current_lat, vehicle.current_lng]}
-                    icon={createVehicleIcon(vehicle.vehicle_type, getVehicleColor(vehicle.vehicle_type))}
+
+                {/* Vehicle Markers */}
+                {map && filteredVehicles.length > 0 && filteredVehicles
+                  .filter(v => v && v.current_lat != null && v.current_lng != null && !isNaN(v.current_lat) && !isNaN(v.current_lng))
+                  .map((vehicle) => (
+                    <VehicleMarker
+                      key={`vehicle-${vehicle.id}`}
+                      map={map}
+                      vehicle={vehicle}
+                      onClick={handleVehicleClick}
+                      showInfoWindow={true}
+                    />
+                  ))}
+                {!vehiclesLoading && vehicles.length === 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 10,
+                      left: 10,
+                      bgcolor: 'warning.main',
+                      color: 'white',
+                      p: 1.5,
+                      borderRadius: 1,
+                      fontSize: '12px',
+                      zIndex: 1000,
+                      maxWidth: 250,
+                    }}
                   >
-                    <Popup>
-                      <Box sx={{ p: 1 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                          {vehicle.vehicle_type}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {vehicle.registration}
-                        </Typography>
-                      </Box>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+                    No vehicles found. Make sure vehicles are seeded and location is set.
+                  </Box>
+                )}
+
+                {/* Stop Markers */}
+                {showStops &&
+                  stops.map((stop) => (
+                    <StopMarker
+                      key={stop.id}
+                      map={map}
+                      stop={stop}
+                      onClick={handleStopClick}
+                      showInfoWindow={true}
+                    />
+                  ))}
+                </GoogleMapContainer>
+              </GoogleMapsLoader>
+
+              {/* Map Controls Overlay */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                  zIndex: 1000,
+                }}
+              >
+                <IconButton
+                  onClick={getCurrentLocation}
+                  disabled={loading}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    '&:hover': { bgcolor: 'background.paper' },
+                    boxShadow: 2,
+                  }}
+                >
+                  {loading ? <CircularProgress size={24} /> : <MyLocation />}
+                </IconButton>
+                <IconButton
+                  onClick={handleManualRefresh}
+                  disabled={vehiclesLoading}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    '&:hover': { bgcolor: 'background.paper' },
+                    boxShadow: 2,
+                  }}
+                  title={lastUpdate ? `Last updated: ${new Date(lastUpdate).toLocaleTimeString()}` : 'Refresh'}
+                >
+                  {vehiclesLoading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Refresh />
+                  )}
+                </IconButton>
+              </Box>
             </Paper>
-            
+
             {/* Map Controls */}
-            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Vehicle Type</InputLabel>
+                <Select
+                  value={vehicleTypeFilter}
+                  label="Vehicle Type"
+                  onChange={(e) => setVehicleTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Types</MenuItem>
+                  <MenuItem value="bus">Bus</MenuItem>
+                  <MenuItem value="taxi">Taxi</MenuItem>
+                  <MenuItem value="moto">Motorcycle</MenuItem>
+                </Select>
+              </FormControl>
+
               <Button
-                variant="outlined"
-                startIcon={<MyLocation />}
-                onClick={getCurrentLocation}
+                variant={showStops ? 'contained' : 'outlined'}
+                color={showStops ? 'primary' : 'default'}
+                onClick={() => {
+                  const newValue = !showStops;
+                  setShowStops(newValue);
+                  // Fetch stops when toggled on
+                  if (newValue && (userLocation || mapCenter)) {
+                    fetchStops();
+                  } else if (!newValue) {
+                    setStops([]);
+                  }
+                }}
+                size="small"
+                startIcon={<LocationOn />}
+                sx={{ mr: 1 }}
               >
-                My Location
+                {showStops ? 'Hide Stops' : 'Show Stops'}
               </Button>
               <Button
-                variant="contained"
-                startIcon={loading ? <CircularProgress size={16} /> : <Refresh />}
-                onClick={fetchVehicles}
-                disabled={loading}
+                variant={realtimeEnabled ? 'contained' : 'outlined'}
+                color={realtimeEnabled ? 'success' : 'default'}
+                onClick={() => {
+                  const newValue = !realtimeEnabled;
+                  setRealtimeEnabled(newValue);
+                  if (newValue) {
+                    toast.success('Real-time tracking enabled');
+                  } else {
+                    toast('Real-time tracking disabled');
+                  }
+                }}
+                size="small"
+                startIcon={<Refresh />}
               >
-                Refresh
+                {realtimeEnabled ? 'Realtime ON' : 'Realtime OFF'}
               </Button>
+              
+              {realtimeEnabled && lastUpdate && (
+                <Chip
+                  label={`Updated ${new Date(lastUpdate).toLocaleTimeString()}`}
+                  size="small"
+                  color="success"
+                  sx={{ ml: 1 }}
+                />
+              )}
             </Box>
           </Grid>
 
-          {/* Vehicle List */}
-          <Grid item xs={12} lg={4}>
+          {/* Vehicle List Sidebar */}
+          <Grid size={{ xs: 12, lg: 4 }}>
             <Paper
               elevation={mode === 'dark' ? 0 : 2}
               sx={{
                 p: 3,
                 bgcolor: 'background.paper',
                 borderRadius: 2,
+                maxHeight: 600,
+                overflow: 'auto',
               }}
             >
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
-                {t('map.nearbyVehicles')}
-              </Typography>
-              
-              {loading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {[1, 2, 3].map((i) => (
-                    <Box key={i} sx={{ height: 80, bgcolor: mode === 'dark' ? '#282828' : '#F5F7FA', borderRadius: 1 }} />
-                  ))}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {t('map.nearbyVehicles') || 'Nearby Vehicles'}
+                </Typography>
+                <Chip
+                  label={filteredVehicles.length}
+                  size="small"
+                  color="primary"
+                />
+              </Box>
+
+              {vehiclesLoading && vehicles.length === 0 ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress />
                 </Box>
-              ) : vehicles.length > 0 ? (
+              ) : vehiclesError ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography color="error" sx={{ mb: 2 }} variant="body2">
+                    Error: {vehiclesError}
+                  </Typography>
+                  <Button variant="outlined" onClick={refreshVehicles} size="small">
+                    Retry
+                  </Button>
+                </Box>
+              ) : filteredVehicles.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {vehicles.slice(0, 10).map((vehicle) => (
+                  {filteredVehicles.slice(0, 10).map((vehicle) => (
                     <Paper
                       key={vehicle.id}
                       elevation={0}
+                      onClick={() => {
+                        setSelectedVehicle(vehicle);
+                        if (map && vehicle.current_lat && vehicle.current_lng) {
+                          map.setCenter({
+                            lat: vehicle.current_lat,
+                            lng: vehicle.current_lng,
+                          });
+                          map.setZoom(15);
+                        }
+                      }}
                       sx={{
                         p: 2,
                         bgcolor: mode === 'dark' ? '#282828' : '#F9FAFB',
                         borderRadius: 1,
-                        border: mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.08)',
+                        border:
+                          selectedVehicle?.id === vehicle.id
+                            ? '2px solid #0D7377'
+                            : mode === 'dark'
+                            ? 'none'
+                            : '1px solid rgba(0,0,0,0.08)',
+                        cursor: 'pointer',
                         '&:hover': {
                           bgcolor: mode === 'dark' ? '#333' : '#F5F7FA',
                         },
@@ -233,20 +677,41 @@ const MapPage = () => {
                           {getVehicleIcon(vehicle.vehicle_type)}
                         </Avatar>
                         <Box sx={{ flexGrow: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, textTransform: 'capitalize', color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: 600,
+                              textTransform: 'capitalize',
+                              color: mode === 'dark' ? '#fff' : '#1A1A1A',
+                            }}
+                          >
                             {vehicle.vehicle_type}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             {vehicle.registration}
                           </Typography>
+                          {vehicle.operator && (
+                            <Typography variant="caption" color="text.secondary">
+                              {vehicle.operator}
+                            </Typography>
+                          )}
                         </Box>
-                        {vehicle.distance_km && (
-                          <Chip
-                            label={`${vehicle.distance_km.toFixed(1)} km`}
-                            size="small"
-                            sx={{ bgcolor: mode === 'dark' ? '#181818' : '#fff' }}
-                          />
-                        )}
+                        <Box sx={{ textAlign: 'right' }}>
+                          {vehicle.distance_km && (
+                            <Chip
+                              label={`${vehicle.distance_km.toFixed(1)} km`}
+                              size="small"
+                              sx={{ mb: 0.5, display: 'block' }}
+                            />
+                          )}
+                          {vehicle.eta_minutes && (
+                            <Chip
+                              label={`${vehicle.eta_minutes.toFixed(0)} min`}
+                              size="small"
+                              color="primary"
+                            />
+                          )}
+                        </Box>
                       </Box>
                     </Paper>
                   ))}
@@ -257,11 +722,7 @@ const MapPage = () => {
                   <Typography color="text.secondary">
                     No vehicles nearby
                   </Typography>
-                  <Button
-                    variant="outlined"
-                    onClick={fetchVehicles}
-                    sx={{ mt: 2 }}
-                  >
+                  <Button variant="outlined" onClick={handleManualRefresh} sx={{ mt: 2 }}>
                     Refresh
                   </Button>
                 </Box>
@@ -278,7 +739,7 @@ const MapPage = () => {
                 borderRadius: 2,
               }}
             >
-              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: mode === 'dark' ? '#fff' : '#1A1A1A' }}>
+              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                 Vehicle Types
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>

@@ -102,6 +102,11 @@ def create_app(config_name: str = None) -> Flask:
     from api.routes import api_bp as legacy_api_bp, init_limiter as init_routes_limiter
     from api.auth import auth_bp as legacy_auth_bp, init_limiter as init_auth_limiter
     from api.admin import admin_bp as legacy_admin_bp
+    from api.map_routes import map_bp
+    from api.realtime_routes import realtime_bp
+    from api.trip_planning_routes import trip_planning_bp
+    from api.saved_locations_routes import saved_locations_bp
+    from api.vehicle_simulation import simulation_bp
 
     # Initialize limiters for api routes
     init_routes_limiter(limiter)
@@ -111,6 +116,11 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(legacy_api_bp, url_prefix='/api/v1')
     app.register_blueprint(legacy_auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(legacy_admin_bp, url_prefix='/api/v1/admin')
+    app.register_blueprint(map_bp, url_prefix='/api/v1/map')
+    app.register_blueprint(realtime_bp, url_prefix='/api/v1/realtime')
+    app.register_blueprint(trip_planning_bp, url_prefix='/api/v1/trip-planning')
+    app.register_blueprint(saved_locations_bp, url_prefix='/api/v1/saved-locations')
+    app.register_blueprint(simulation_bp, url_prefix='/api/v1/simulation')
     
     # Initialize database tables if they don't exist (for serverless)
     try:

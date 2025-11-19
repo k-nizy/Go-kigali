@@ -54,12 +54,37 @@ export const apiService = {
     plan: (origin, destination) => 
       api.get(`/api/v1/routes/plan?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`),
   },
+  tripPlanning: {
+    plan: (data) => api.post('/api/v1/trip-planning/plan', data),
+    compare: (data) => api.post('/api/v1/trip-planning/compare', data),
+  },
+  
+  // Saved locations
+  savedLocations: {
+    getAll: () => api.get('/api/v1/saved-locations/'),
+    create: (data) => api.post('/api/v1/saved-locations/', data),
+    update: (id, data) => api.put(`/api/v1/saved-locations/${id}`, data),
+    delete: (id) => api.delete(`/api/v1/saved-locations/${id}`),
+  },
 
   // Vehicles
   vehicles: {
-    getNearby: (lat, lng, radius = 1.0, type = null) => {
-      let url = `/api/v1/vehicles/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+    getNearby: (lat, lng, radius = 5.0, type = null) => {
+      let url = `/api/v1/map/vehicles/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
       if (type) url += `&type=${encodeURIComponent(type)}`;
+      return api.get(url);
+    },
+    getById: (id, lat = null, lng = null) => {
+      let url = `/api/v1/map/vehicles/${id}`;
+      if (lat && lng) {
+        url += `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`;
+      }
+      return api.get(url);
+    },
+    getRealtime: (lat, lng, radius = 5.0, type = null, since = null) => {
+      let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+      if (type) url += `&type=${encodeURIComponent(type)}`;
+      if (since) url += `&since=${encodeURIComponent(since)}`;
       return api.get(url);
     },
   },
@@ -71,6 +96,16 @@ export const apiService = {
   stops: {
     getByZone: (zoneId) => api.get(`/api/v1/stops?zone_id=${encodeURIComponent(zoneId)}`),
     getAll: () => api.get('/api/v1/stops'),
+    getNearby: (lat, lng, radius = 2.0, type = null) => {
+      let url = `/api/v1/map/stops/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+      if (type) url += `&type=${encodeURIComponent(type)}`;
+      return api.get(url);
+    },
+    getWithETA: (lat, lng, radius = 2.0, type = null) => {
+      let url = `/api/v1/realtime/stops/eta?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+      if (type) url += `&stop_type=${encodeURIComponent(type)}`;
+      return api.get(url);
+    },
   },
 
   // Fare estimation

@@ -13,6 +13,7 @@ from datetime import datetime
 import requests
 import os
 import traceback
+import random
 
 api_bp = Blueprint('api', __name__)
 
@@ -32,40 +33,153 @@ def rate_limit_decorator(limit_str):
         return func
     return decorator
 
+# Kigali location coordinates mapping
+KIGALI_LOCATIONS = {
+    'nyabugogo': {'lat': -1.9441, 'lng': 30.0619},
+    'city center': {'lat': -1.9500, 'lng': 30.0580},
+    'nyamirambo': {'lat': -1.9600, 'lng': 30.0500},
+    'kimironko': {'lat': -1.9200, 'lng': 30.0900},
+    'remera': {'lat': -1.9300, 'lng': 30.1100},
+    'kacyiru': {'lat': -1.9307, 'lng': 30.1182},
+    'gikondo': {'lat': -1.9700, 'lng': 30.0800},
+    'kabeza': {'lat': -1.9800, 'lng': 30.1000},
+    'kanombe': {'lat': -1.9600, 'lng': 30.1300},
+    'kicukiro': {'lat': -1.9700, 'lng': 30.0900},
+    'kigali international airport': {'lat': -1.9686, 'lng': 30.1394},
+    'university of rwanda': {'lat': -1.9441, 'lng': 30.0619},
+    'kigali convention centre': {'lat': -1.9500, 'lng': 30.1000},
+}
+
+def geocode_location(location):
+    """Convert location name to coordinates"""
+    if isinstance(location, dict):
+        return float(location.get('lat', 0)), float(location.get('lng', 0))
+    
+    if isinstance(location, str):
+        # Try to parse as coordinates first
+        try:
+            lat, lng = map(float, location.split(','))
+            return lat, lng
+        except ValueError:
+            pass
+        
+        # Try to find in location mapping
+        location_lower = location.lower().strip()
+        if location_lower in KIGALI_LOCATIONS:
+            loc = KIGALI_LOCATIONS[location_lower]
+            return loc['lat'], loc['lng']
+    
+    return None, None
+
+# Kigali location coordinates mapping
+KIGALI_LOCATIONS = {
+    'nyabugogo': {'lat': -1.9441, 'lng': 30.0619},
+    'city center': {'lat': -1.9500, 'lng': 30.0580},
+    'nyamirambo': {'lat': -1.9600, 'lng': 30.0500},
+    'kimironko': {'lat': -1.9200, 'lng': 30.0900},
+    'remera': {'lat': -1.9300, 'lng': 30.1100},
+    'kacyiru': {'lat': -1.9307, 'lng': 30.1182},
+    'gikondo': {'lat': -1.9700, 'lng': 30.0800},
+    'kabeza': {'lat': -1.9800, 'lng': 30.1000},
+    'kanombe': {'lat': -1.9600, 'lng': 30.1300},
+    'kicukiro': {'lat': -1.9700, 'lng': 30.0900},
+    'kigali international airport': {'lat': -1.9686, 'lng': 30.1394},
+    'university of rwanda': {'lat': -1.9441, 'lng': 30.0619},
+    'kigali convention centre': {'lat': -1.9500, 'lng': 30.1000},
+}
+
+def geocode_location(location):
+    """Convert location name to coordinates"""
+    if isinstance(location, dict):
+        return float(location.get('lat', 0)), float(location.get('lng', 0))
+    
+    if isinstance(location, str):
+        # Try to parse as coordinates first
+        try:
+            lat, lng = map(float, location.split(','))
+            return lat, lng
+        except ValueError:
+            pass
+        
+        # Try to find in location mapping
+        location_lower = location.lower().strip()
+        if location_lower in KIGALI_LOCATIONS:
+            loc = KIGALI_LOCATIONS[location_lower]
+            return loc['lat'], loc['lng']
+    
+    return None, None
+
+@api_bp.route('/routes', methods=['POST', 'GET'])
 @api_bp.route('/routes/plan', methods=['GET'])
 @rate_limit_decorator("60 per minute")
 def plan_route():
     """Plan a route between origin and destination"""
     try:
-        origin = request.args.get('origin')
-        destination = request.args.get('destination')
+        # Handle both GET and POST requests
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            origin = data.get('origin')
+            destination = data.get('destination')
+        else:
+            origin = request.args.get('origin')
+            destination = request.args.get('destination')
         
         if not origin or not destination:
-            return jsonify({'error': 'Origin and destination coordinates are required'}), 400
+            return jsonify({'error': 'Origin and destination are required'}), 400
         
-        # Parse coordinates
-        try:
-            origin_lat, origin_lng = map(float, origin.split(','))
-            dest_lat, dest_lng = map(float, destination.split(','))
-        except ValueError:
-            return jsonify({'error': 'Invalid coordinate format'}), 400
+        # Geocode locations (handle names or coordinates)
+        origin_lat, origin_lng = geocode_location(origin)
+        dest_lat, dest_lng = geocode_location(destination)
+        
+        if origin_lat is None or origin_lng is None:
+            return jsonify({'error': f'Could not geocode origin: {origin}. Please use coordinates or a known location name.'}), 400
+        if dest_lat is None or dest_lng is None:
+            return jsonify({'error': f'Could not geocode destination: {destination}. Please use coordinates or a known location name.'}), 400
+        
+        if origin_lat == 0 and origin_lng == 0:
+            return jsonify({'error': 'Valid origin coordinates are required'}), 400
+        if dest_lat == 0 and dest_lng == 0:
+            return jsonify({'error': 'Valid destination coordinates are required'}), 400
         
         # Get route options from Google Directions API
         route_options = get_route_options(origin_lat, origin_lng, dest_lat, dest_lng)
         
-        # Calculate fare estimates for each mode
+        if not route_options:
+            return jsonify({'error': 'Could not calculate route options'}), 500
+        
+        # Calculate fare estimates for each mode and format for frontend
+        formatted_routes = []
         for option in route_options:
             fare_estimate = calculate_fare_estimate(
                 option['mode'],
                 option['distance_km'],
                 option['duration_minutes']
             )
-            option['estimated_fare'] = fare_estimate
+            
+            # Format route for frontend (matching PlanTripPage.js expected format)
+            # Use original location names for stops (or capitalize if coordinates were used)
+            origin_name = origin if isinstance(origin, str) and ',' not in origin else 'Origin'
+            dest_name = destination if isinstance(destination, str) and ',' not in destination else 'Destination'
+            
+            formatted_route = {
+                'vehicle_type': option['mode'],
+                'route_number': '101' if option['mode'] == 'bus' else ('Direct' if option['mode'] == 'taxi' else 'Express'),
+                'fare': fare_estimate,
+                'estimated_fare': fare_estimate,  # Also include for compatibility
+                'duration': f"{int(option['duration_minutes'])}-{int(option['duration_minutes'] * 1.2)}",
+                'distance': str(round(option['distance_km'], 1)),
+                'distance_km': option['distance_km'],
+                'duration_minutes': option['duration_minutes'],
+                'stops': [origin_name, dest_name] if option['mode'] != 'bus' else [origin_name, 'Nyabugogo', dest_name],
+            }
+            formatted_routes.append(formatted_route)
         
         return jsonify({
             'origin': {'lat': origin_lat, 'lng': origin_lng},
             'destination': {'lat': dest_lat, 'lng': dest_lng},
             'options': route_options,
+            'routes': formatted_routes,  # Formatted for frontend
+            'count': len(formatted_routes),
             'timestamp': datetime.utcnow().isoformat()
         })
         
@@ -406,32 +520,51 @@ def get_route_options(origin_lat, origin_lng, dest_lat, dest_lng):
     ]
 
 def calculate_fare_estimate(mode, distance_km, duration_minutes):
-    """Calculate fare estimate using fare rules"""
+    """
+    Calculate fare estimate with randomized fares for taxis and motos.
+    
+    Fare ranges:
+    - Taxis: 7,000 - 9,000 RWF (randomly selected)
+    - Moto: 1,000 - 2,000 RWF (randomly selected)
+    - Bus: Uses existing fare rules or fallback pricing
+    """
     try:
-        fare_rules = FareRule.get_active_rules(mode=mode)
+        # Randomized fare calculation for taxis and motos
+        if mode == 'taxi':
+            # Taxis: random fare between 7,000 and 9,000 RWF
+            fare_options = [7000, 8000, 9000]
+            return random.choice(fare_options)
         
-        if not fare_rules:
-            # Fallback pricing
-            if mode == 'bus':
-                return max(500, distance_km * 200)  # 500 RWF base + 200 per km
-            elif mode == 'moto':
-                return max(800, distance_km * 300)  # 800 RWF base + 300 per km
-            elif mode == 'taxi':
-                return max(1200, distance_km * 400)  # 1200 RWF base + 400 per km
+        elif mode == 'moto':
+            # Moto: random fare between 1,000 and 2,000 RWF
+            return random.randint(1000, 2000)
         
-        # Use the most recent fare rule
-        fare_rule = fare_rules[0]
-        return fare_rule.calculate_fare(distance_km, duration_minutes)
+        elif mode == 'bus':
+            # Bus: Use existing fare rules or fallback pricing
+            try:
+                fare_rules = FareRule.get_active_rules(mode=mode)
+                if fare_rules:
+                    fare_rule = fare_rules[0]
+                    return fare_rule.calculate_fare(distance_km, duration_minutes)
+            except Exception:
+                pass
+            
+            # Fallback pricing for bus
+            return max(500, round(distance_km * 200))
+        
+        else:
+            # Unknown mode, return default
+            return 1000
         
     except Exception as e:
         print(f"Fare calculation error: {e}")
-        # Return fallback pricing
-        if mode == 'bus':
-            return max(500, distance_km * 200)
+        # Fallback pricing on error
+        if mode == 'taxi':
+            return 8000  # Default to middle of range
         elif mode == 'moto':
-            return max(800, distance_km * 300)
-        elif mode == 'taxi':
-            return max(1200, distance_km * 400)
+            return 1500  # Default to middle of range
+        elif mode == 'bus':
+            return max(500, round(distance_km * 200))
         return 1000
 
 def estimate_eta(distance_km, vehicle_type):

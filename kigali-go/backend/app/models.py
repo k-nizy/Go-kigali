@@ -2,49 +2,9 @@
 Database models for authentication system
 """
 from datetime import datetime
-from app.extensions import db, bcrypt
 from typing import Optional
 
-
-class User(db.Model):
-    """User model for authentication"""
-    __tablename__ = 'users'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(128), nullable=False)
-    name = db.Column(db.String(150), nullable=True)
-    is_active = db.Column(db.Boolean(), default=True, nullable=False)
-    is_email_verified = db.Column(db.Boolean(), default=False, nullable=False)
-    created_at = db.Column(db.DateTime(), default=datetime.utcnow, nullable=False)
-    last_login = db.Column(db.DateTime(), nullable=True)
-    
-    def __repr__(self) -> str:
-        return f'<User {self.email}>'
-    
-    def set_password(self, password: str) -> None:
-        """Hash and set password"""
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-    
-    def check_password(self, password: str) -> bool:
-        """Verify password against hash"""
-        return bcrypt.check_password_hash(self.password_hash, password)
-    
-    def to_dict(self) -> dict:
-        """Convert user to dictionary (exclude sensitive fields)"""
-        return {
-            'id': self.id,
-            'email': self.email,
-            'name': self.name,
-            'is_email_verified': self.is_email_verified,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None
-        }
-    
-    @classmethod
-    def find_by_email(cls, email: str) -> Optional['User']:
-        """Find user by email (case-insensitive)"""
-        return cls.query.filter(db.func.lower(cls.email) == email.lower()).first()
+from app.extensions import db
 
 
 class TokenBlocklist(db.Model):

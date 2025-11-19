@@ -132,3 +132,5 @@ env/
 *.p10
 *.p12
 *.pfx
+
+.vercel

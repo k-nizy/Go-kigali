@@ -61,7 +61,10 @@ const PlanTripPage = () => {
         setRoutes(data.routes || []);
         toast.success(t('plan.searching'));
       } else {
-        // Fallback to mock data if API fails
+        // Fallback to mock data if API fails (with randomized fares)
+        const taxiFare = [7000, 8000, 9000][Math.floor(Math.random() * 3)];
+        const motoFare = Math.floor(Math.random() * 1001) + 1000; // 1000-2000
+        
         const mockRoutes = [
           {
             vehicle_type: 'bus',
@@ -74,7 +77,7 @@ const PlanTripPage = () => {
           {
             vehicle_type: 'taxi',
             route_number: 'Direct',
-            fare: 1200,
+            fare: taxiFare,
             duration: '10-15',
             distance: '5.2',
             stops: [origin, destination],
@@ -82,7 +85,7 @@ const PlanTripPage = () => {
           {
             vehicle_type: 'moto',
             route_number: 'Express',
-            fare: 800,
+            fare: motoFare,
             duration: '8-12',
             distance: '5.2',
             stops: [origin, destination],

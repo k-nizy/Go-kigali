@@ -16,19 +16,23 @@ echo Activating virtual environment...
 call venv\Scripts\activate.bat
 
 echo Installing/Updating dependencies...
-if exist requirements-dev.txt (
-    echo Using requirements-dev.txt for local setup...
-    pip install -q -r requirements-dev.txt
-    set INSTALL_ERROR=%ERRORLEVEL%
-) else (
-    echo requirements-dev.txt not found. Falling back to requirements.txt...
+if exist requirements.txt (
+    echo Installing backend requirements from requirements.txt...
     pip install -q -r requirements.txt
     set INSTALL_ERROR=%ERRORLEVEL%
+) else (
+    echo requirements.txt not found! Please ensure backend dependencies file exists.
+    set INSTALL_ERROR=1
 )
 if not "%INSTALL_ERROR%"=="0" (
     echo Error installing dependencies. Please check requirements.txt
     pause
     exit /b 1
+)
+
+if exist requirements-dev.txt (
+    echo Installing additional local development dependencies from requirements-dev.txt...
+    pip install -q -r requirements-dev.txt >nul
 )
 echo Backend dependencies ready!
 echo.
@@ -45,7 +49,7 @@ echo.
 echo [3/4] Checking Frontend Dependencies...
 cd ..\frontend
 if not exist "node_modules" (
-    echo Installing frontend dependencies (this may take a few minutes)...
+    echo Installing frontend dependencies ^(this may take a few minutes^)...
     call npm install
 )
 echo Frontend dependencies ready!
