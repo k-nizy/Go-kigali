@@ -91,10 +91,14 @@ def create_app():
     # Health check endpoint
     @app.route('/health')
     def health_check():
+        import time
+        start_time = time.time()
         return jsonify({
             'status': 'healthy',
             'service': 'kigali-go-api',
-            'version': '1.0.0'
+            'version': '1.0.0',
+            'timestamp': time.time(),
+            'uptime': time.time() - start_time
         })
     
     # API documentation endpoint
