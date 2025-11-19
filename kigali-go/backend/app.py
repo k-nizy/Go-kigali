@@ -24,8 +24,33 @@ from api.admin import admin_bp
 from utils.error_handlers import register_error_handlers, APIError, ValidationError, \
     AuthenticationError, AuthorizationError, ResourceNotFoundError, InternalServerError
 
+def validate_environment():
+    """Validate required environment variables"""
+    required_vars = ['SECRET_KEY', 'DATABASE_URL']
+    missing_vars = []
+    
+    for var in required_vars:
+        if not os.getenv(var):
+            missing_vars.append(var)
+    
+    if missing_vars:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    
+    # Validate SECRET_KEY strength
+    secret_key = os.getenv('SECRET_KEY')
+    if len(secret_key) < 32:
+        raise ValueError("SECRET_KEY must be at least 32 characters long for security")
+    
+    # Validate DATABASE_URL format
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url.startswith(('postgresql://', 'sqlite:///')):
+        raise ValueError("DATABASE_URL must be a valid PostgreSQL or SQLite connection string")
+
 def create_app():
     """Application factory pattern"""
+    # Validate environment variables first
+    validate_environment()
+    
     app = Flask(__name__)
     
     # Load configuration from environment variables
