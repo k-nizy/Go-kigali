@@ -8,6 +8,8 @@ KigaliGo is a comprehensive smart urban mobility platform designed to revolution
 
 ### 2.1 Purpose
 - Provide real-time public transportation information
+- Enable seamless multi-modal trip planning
+- Support scalable urban mobility solutions
 - Enable multi-modal trip planning (buses, taxis, walking)
 - Offer accurate fare estimation
 - Enhance passenger safety through reporting systems
