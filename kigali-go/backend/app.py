@@ -58,6 +58,13 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 
         'postgresql://username:password@localhost:5432/kigali_go_db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': int(os.getenv('DB_POOL_SIZE', '10')),
+        'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '3600')),
+        'pool_pre_ping': os.getenv('DB_POOL_PRE_PING', 'True').lower() == 'true',
+        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '30')),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '20'))
+    }
     app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16777216))
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
     
