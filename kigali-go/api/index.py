@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Ensure backend package is discoverable when deployed on Vercel
+# This Ensures backend package is discoverable when deployed on Vercel
 current_dir = os.path.dirname(__file__)
 backend_path = os.path.join(current_dir, "..", "backend")
 if backend_path not in sys.path:

@@ -19,6 +19,13 @@ A comprehensive public transportation solution for Kigali, providing real-time t
 - PostgreSQL 14+ with PostGIS extension
 - Git 2.30+
 
+### Environment Setup
+Copy the environment template and configure your settings:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
 ### Local Development Setup
 
 1. **Clone and setup:**
