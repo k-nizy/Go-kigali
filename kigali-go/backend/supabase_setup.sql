@@ -113,9 +113,9 @@ CREATE INDEX IF NOT EXISTS ix_vehicles_registration ON vehicles(registration);
 CREATE INDEX IF NOT EXISTS ix_vehicles_is_active ON vehicles(is_active);
 CREATE INDEX IF NOT EXISTS ix_vehicles_type ON vehicles(vehicle_type);
 
--- ============================================
+-- ===========================================
 -- ZONES TABLE
--- ============================================
+-- ===========================================
 CREATE TABLE IF NOT EXISTS zones (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,

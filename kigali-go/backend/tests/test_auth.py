@@ -6,7 +6,7 @@ from app.models import User, EmailVerificationToken, PasswordResetToken
 
 
 class TestRegister:
-    """Test user registration"""
+    ""Test user registration""
     
     def test_register_success(self, client, db):
         """Test successful user registration"""
