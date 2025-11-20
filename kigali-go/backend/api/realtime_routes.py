@@ -3,12 +3,58 @@ Real-time vehicle tracking API routes
 Uses long-polling approach for compatibility
 """
 
-from flask import Blueprint, request, jsonify, current_app
-from app.extensions import db, limiter
+from flask import Blueprint, request, jsonify, current_app, g
+from app.extensions import db, limiter, cache
 from models.vehicle import Vehicle
 from models.stop import Stop
 from datetime import datetime, timedelta
 import math
+import time
+import logging
+from functools import wraps
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+def handle_errors(f):
+    """Decorator to handle common errors and logging"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            start_time = time.time()
+            result = f(*args, **kwargs)
+            duration = (time.time() - start_time) * 1000  # in ms
+            
+            # Log slow requests
+            if duration > 500:  # Log if request takes > 500ms
+                logger.warning(
+                    f"Slow request: {request.path} took {duration:.2f}ms",
+                    extra={
+                        'endpoint': request.path,
+                        'duration_ms': duration,
+                        'params': dict(request.args)
+                    }
+                )
+                
+            return result
+            
+        except ValueError as e:
+            logger.error(f"Validation error: {str(e)}", exc_info=True)
+            return jsonify({
+                'status': 'error',
+                'message': str(e) or 'Invalid request parameters',
+                'code': 400
+            }), 400
+            
+        except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+            return jsonify({
+                'status': 'error',
+                'message': 'An unexpected error occurred',
+                'code': 500
+            }), 500
+            
+    return wrapper
 
 realtime_bp = Blueprint('realtime', __name__)
 
@@ -51,9 +97,48 @@ def estimate_eta(distance_km, vehicle_type, traffic_factor=1.0):
     return round(eta_minutes, 1)
 
 
+def get_cache_key():
+    """Generate a cache key based on request parameters"""
+    args = request.args.copy()
+    # Remove cache-busting parameter if present
+    args.pop('_', None)
+    return f"vehicles:{':'.join(f'{k}={v}' for k, v in sorted(args.items()))}"
+
 @realtime_bp.route('/vehicles/realtime', methods=['GET'])
-@limiter.limit("300 per minute")  # Increased limit for real-time data
+@limiter.limit("500 per minute")  # Increased limit for real-time data
+@handle_errors
 def get_realtime_vehicles():
+    """
+    Get real-time vehicle updates
+    
+    Query Parameters:
+    - lat (float): Latitude (required)
+    - lng (float): Longitude (required)
+    - radius (float): Search radius in km (default: 5.0)
+    - since (string): ISO timestamp of last update (optional)
+    - type (string): Vehicle type filter (bus, taxi, moto) (optional)
+    - _ (int): Cache-busting parameter (ignored)
+    
+    Response:
+    {
+        "status": "success",
+        "data": {
+            "vehicles": [
+                {
+                    "id": "vehicle_id",
+                    "type": "bus|taxi|moto",
+                    "lat": 0.0,
+                    "lng": 0.0,
+                    "heading": 0,
+                    "speed": 0,
+                    "updated_at": "ISO timestamp"
+                }
+            ],
+            "timestamp": "ISO timestamp",
+            "count": 0
+        }
+    }
+    """
     """
     Get real-time vehicle updates since last timestamp
     Uses long-polling approach for real-time updates
@@ -65,12 +150,17 @@ def get_realtime_vehicles():
     - since: ISO timestamp of last update (optional)
     - type: vehicle type filter (bus, taxi, moto) (optional)
     """
+    # Parse and validate parameters
     try:
         lat = float(request.args.get('lat', 0))
         lng = float(request.args.get('lng', 0))
-        radius = float(request.args.get('radius', 5.0))
+        radius = min(float(request.args.get('radius', 5.0)), 20.0)  # Cap radius at 20km
         vehicle_type = request.args.get('type')  # optional filter
         since_str = request.args.get('since')  # ISO timestamp
+        
+        # Validate coordinates
+        if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+            raise ValueError("Invalid coordinates provided")
         
         if lat == 0 and lng == 0:
             return jsonify({'error': 'Valid coordinates are required'}), 400
@@ -80,16 +170,46 @@ def get_realtime_vehicles():
         if since_str:
             try:
                 since = datetime.fromisoformat(since_str.replace('Z', '+00:00'))
+                # Don't allow timestamps too far in the past to prevent abuse
+                max_age = datetime.utcnow() - timedelta(days=1)
+                if since < max_age:
+                    since = max_age
             except ValueError:
-                return jsonify({'error': 'Invalid timestamp format. Use ISO 8601 format.'}), 400
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Invalid timestamp format. Use ISO 8601 format.',
+                    'code': 400
+                }), 400
+        
+        # Use a cache key based on the request parameters
+        cache_key = get_cache_key()
+        
+        # Try to get from cache first (only for recent data)
+        if not since:
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                return jsonify({
+                    'status': 'success',
+                    'data': cached_data,
+                    'cached': True
+                })
         
         # Calculate bounding box for initial filtering (faster than calculating distance for all vehicles)
         # 1 degree of latitude ~= 111 km, 1 degree of longitude varies by latitude
         lat_radius = radius / 111.0
         lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
         
-        # Query only vehicles within the bounding box first (much faster than calculating distance for all)
-        query = db.session.query(Vehicle).filter(
+        # Build base query
+        query = db.session.query(
+            Vehicle.id,
+            Vehicle.registration,
+            Vehicle.vehicle_type,
+            Vehicle.current_lat,
+            Vehicle.current_lng,
+            Vehicle.heading,
+            Vehicle.speed,
+            Vehicle.updated_at
+        ).filter(
             Vehicle.is_active == True,
             Vehicle.current_lat.isnot(None),
             Vehicle.current_lng.isnot(None),
@@ -97,96 +217,72 @@ def get_realtime_vehicles():
             Vehicle.current_lng.between(lng - lng_radius, lng + lng_radius)
         )
         
-        # Filter by last_seen if since timestamp provided (for incremental updates)
-        # But always include static vehicles (STATIC*) regardless of timestamp
+        # Apply filters
         if since:
-            # Get vehicles updated since last check OR static vehicles
-            query = query.filter(
-                (Vehicle.updated_at >= since) | (Vehicle.registration.like('STATIC%'))
-            )
+            query = query.filter(Vehicle.updated_at >= since)
         
         if vehicle_type:
             query = query.filter(Vehicle.vehicle_type == vehicle_type)
         
-        # Only select the columns we need to reduce data transfer
-        vehicles = query.with_entities(
-            Vehicle.id,
-            Vehicle.registration,
-            Vehicle.vehicle_type,
-            Vehicle.current_lat,
-            Vehicle.current_lng,
-            Vehicle.updated_at,
-            Vehicle.heading,
-            Vehicle.speed
-        ).all()
+        # Execute query
+        vehicles = query.all()
         
-        # Log for debugging
-        current_app.logger.info(f'Found {len(vehicles)} active vehicles in the area')
+        # Process results
+        now = datetime.utcnow()
+        result_vehicles = []
         
-        nearby_vehicles = []
-        
-        # Convert to a list of dictionaries for easier manipulation
-        vehicles_data = [{
-            'id': v.id,
-            'registration': v.registration,
-            'vehicle_type': v.vehicle_type,
-            'current_lat': v.current_lat,
-            'current_lng': v.current_lng,
-            'updated_at': v.updated_at.isoformat() if v.updated_at else None,
-            'heading': v.heading,
-            'speed': v.speed
-        } for v in vehicles]
-        
-        # Sort by distance and limit to top 50 closest vehicles to reduce response size
-        vehicles_data.sort(
-            key=lambda v: calculate_distance_km(lat, lng, v['current_lat'], v['current_lng'])
-        )
-        vehicles_data = vehicles_data[:50]
-        
-        for vehicle in vehicles_data:
-            # Calculate distance (already within bounding box, so this is fine)
+        for vehicle in vehicles:
+            # Calculate distance and filter by radius
             distance = calculate_distance_km(
                 lat, lng,
-                vehicle['current_lat'], vehicle['current_lng']
+                vehicle.current_lat, vehicle.current_lng
             )
-                
+            
             if distance <= radius:
-                # Calculate ETA
-                eta_minutes = estimate_eta(distance, vehicle['vehicle_type'])
-                
-                vehicle_dict = {
-                    'id': vehicle['id'],
-                    'registration': vehicle['registration'],
-                    'vehicle_type': vehicle['vehicle_type'],
-                    'current_lat': vehicle['current_lat'],
-                    'current_lng': vehicle['current_lng'],
-                    'updated_at': vehicle['updated_at'],
+                result_vehicles.append({
+                    'id': vehicle.id,
+                    'registration': vehicle.registration,
+                    'type': vehicle.vehicle_type,
+                    'lat': vehicle.current_lat,
+                    'lng': vehicle.current_lng,
+                    'heading': vehicle.heading or 0,
+                    'speed': vehicle.speed or 0,
                     'distance_km': round(distance, 2),
-                    'eta_minutes': eta_minutes,
-                    'bearing': vehicle.get('heading', 0) or 0,
-                    'speed': vehicle.get('speed', 0) or 0
-                }
-                nearby_vehicles.append(vehicle_dict)
+                    'updated_at': vehicle.updated_at.isoformat() if vehicle.updated_at else None
+                })
         
-        # Log results for debugging
-        current_app.logger.info(
-            f'Vehicle search results: {len(nearby_vehicles)} nearby vehicles found'
-        )
+        # Prepare response
+        response_data = {
+            'vehicles': result_vehicles,
+            'timestamp': now.isoformat(),
+            'count': len(result_vehicles),
+            'center': {'lat': lat, 'lng': lng},
+            'radius_km': radius
+        }
         
-        # Sort by distance
-        nearby_vehicles.sort(key=lambda x: x['distance_km'])
+        # Cache the response for 5 seconds (for identical requests)
+        if not since:
+            cache.set(cache_key, response_data, timeout=5)
         
         return jsonify({
-            'vehicles': nearby_vehicles,
-            'timestamp': datetime.utcnow().isoformat(),
-            'count': len(nearby_vehicles)
+            'status': 'success',
+            'data': response_data
         })
         
     except ValueError as e:
-        return jsonify({'error': f'Invalid parameter: {str(e)}'}), 400
+        logger.warning(f"Invalid parameter: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f'Invalid parameter: {str(e)}',
+            'code': 400
+        }), 400
     except Exception as e:
-        current_app.logger.error(f'Error fetching real-time vehicles: {str(e)}')
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f'Error fetching real-time vehicles: {str(e)}', exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': 'Internal server error',
+            'code': 500
+        }), 500
 
 
 @realtime_bp.route('/stops/eta', methods=['GET'])

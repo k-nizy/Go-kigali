@@ -17,35 +17,52 @@ import { toast } from 'react-hot-toast';
  * @param {boolean} options.enabled - Enable/disable polling (default: true)
  * @returns {Object} - {vehicles, loading, error, lastUpdate, refresh}
  */
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
 const useRealtimeVehicles = ({
   location,
   radius = 5.0,
   vehicleType = null,
-  interval = 30000, // 30 seconds default (reduced to avoid rate limits)
+  interval = 30000, // 30 seconds default
   enabled = true,
+  retryCount = 0,
+  onError = null,
 }) => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lastTimestamp, setLastTimestamp] = useState(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   
   const intervalRef = useRef(null);
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
-  const lastTimestampRef = useRef(null); // Use ref to avoid dependency issues
+  const lastTimestampRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
 
-  // Fetch vehicles function
-  const fetchVehicles = useCallback(async (since = null) => {
-    if (!location || !location.lat || !location.lng) {
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Fetch vehicles function with retry logic
+  const fetchVehicles = useCallback(async (since = null, retry = 0) => {
+    if (!enabled || !location || !location.lat || !location.lng) {
       return;
     }
 
-    // Cancel previous request if still pending
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
+    // Clean up any pending requests
+    cleanup();
+    
     // Create new abort controller
     abortControllerRef.current = new AbortController();
 
@@ -53,8 +70,11 @@ const useRealtimeVehicles = ({
     setError(null);
 
     try {
+      // Add cache-busting parameter to avoid stale data
+      const timestamp = new Date().getTime();
+      
       // Build URL with query params
-      let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=${encodeURIComponent(radius)}`;
+      let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=${encodeURIComponent(radius)}&_=${timestamp}`;
       
       if (vehicleType) {
         url += `&type=${encodeURIComponent(vehicleType)}`;
@@ -66,27 +86,48 @@ const useRealtimeVehicles = ({
 
       const response = await fetch(url, {
         signal: abortControllerRef.current.signal,
+        credentials: 'include', // Ensure cookies are sent
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
       }
 
       const data = await response.json();
 
-      console.log('API Response:', {
-        vehicleCount: data.vehicles?.length || 0,
-        totalCount: data.count || 0,
-        hasVehicles: !!(data.vehicles && data.vehicles.length > 0),
-        timestamp: data.timestamp,
-        center: data.center,
-        radius: data.radius_km,
-      });
-
       if (isMountedRef.current) {
-        if (since && data.vehicles) {
+        // Reset retry counter on successful response
+        setRetryAttempt(0);
+        
+        // Log only in development
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('API Response:', {
+            vehicleCount: data.vehicles?.length || 0,
+            totalCount: data.count || 0,
+            timestamp: data.timestamp,
+            center: data.center,
+            radius: data.radius_km,
+          });
+        }
+
+        if (data.vehicles) {
           // Update existing vehicles or add new ones
           setVehicles((prevVehicles) => {
+            // If this is a fresh fetch (not an update), replace the entire list
+            if (!since) {
+              return data.vehicles || [];
+            }
+            
+            // Otherwise, merge with existing vehicles
             const vehicleMap = new Map();
             
             // Add existing vehicles to map
@@ -118,26 +159,42 @@ const useRealtimeVehicles = ({
         lastTimestampRef.current = data.timestamp; // Update ref as well
       }
     } catch (err) {
-      if (err.name === 'AbortError') {
-        // Request was cancelled, ignore
-        return;
-      }
-      
       if (isMountedRef.current) {
         // Handle rate limiting (429 errors)
-        if (err.message && err.message.includes('429')) {
-          console.warn('Rate limited, backing off...');
-          setError('Too many requests. Please wait a moment.');
-          // Don't retry immediately on rate limit
+        if (err.status === 429) {
+          const retryAfter = (err.data && err.data.retry_after) || 5; // Default to 5 seconds
+          console.warn(`Rate limited. Retrying after ${retryAfter} seconds...`);
+          
+          // Schedule a retry
+          retryTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) {
+              fetchVehicles(since, retry + 1);
+            }
+          }, retryAfter * 1000);
+          
+          setError('Server is busy. Retrying...');
           return;
         }
         
-        console.error('Error fetching real-time vehicles:', err);
-        setError(err.message);
-        // Don't show toast for every error to avoid spam
-        if (!since) {
-          // Only show error on initial load
-          toast.error('Failed to load vehicles');
+        // Handle other errors with retry logic
+        if (retry < MAX_RETRIES) {
+          const delay = RETRY_DELAY * Math.pow(2, retry); // Exponential backoff
+          console.warn(`Attempt ${retry + 1} failed. Retrying in ${delay}ms...`);
+          
+          retryTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) {
+              fetchVehicles(since, retry + 1);
+            }
+          }, delay);
+          
+          setError(`Connection issue. Retrying... (${retry + 1}/${MAX_RETRIES})`);
+        } else {
+          // Max retries reached
+          console.error('Max retries reached. Giving up.');
+          setError('Failed to load vehicles. Please check your connection and try again.');
+          if (onError) {
+            onError(err);
+          }
         }
       }
     } finally {
@@ -149,50 +206,40 @@ const useRealtimeVehicles = ({
 
   // Manual refresh function
   const refresh = useCallback(() => {
-    fetchVehicles(null); // Full refresh
+    return fetchVehicles(lastTimestampRef.current);
   }, [fetchVehicles]);
 
   // Set up polling
   useEffect(() => {
-    if (!enabled || !location || !location.lat || !location.lng) {
-      console.log('useRealtimeVehicles: Not enabled or no location', { enabled, location });
-      // Clear interval if disabled
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
-
-    console.log('useRealtimeVehicles: Starting polling', { location, interval, enabled });
-
-    // Initial fetch immediately
-    fetchVehicles(null);
-
+    isMountedRef.current = true;
+    
+    // Initial fetch
+    fetchVehicles(lastTimestampRef.current);
+    
     // Set up interval for polling
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    if (enabled && interval > 0) {
+      intervalRef.current = setInterval(() => {
+        // Only fetch if not currently loading and no retry is scheduled
+        if (!loading && !retryTimeoutRef.current) {
+          fetchVehicles(lastTimestampRef.current);
+        }
+      }, interval);
     }
     
-    intervalRef.current = setInterval(() => {
-      if (isMountedRef.current && location && location.lat && location.lng && enabled) {
-        console.log('useRealtimeVehicles: Polling update', { lastTimestamp: lastTimestampRef.current });
-        // Use ref to get the latest timestamp without causing re-renders
-        fetchVehicles(lastTimestampRef.current);
-      }
-    }, interval);
-
-    // Cleanup
+    // Clean up
     return () => {
+      isMountedRef.current = false;
+      cleanup();
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
     };
-  }, [enabled, location?.lat, location?.lng, interval, fetchVehicles]);
+  }, [location, radius, vehicleType, interval, enabled, fetchVehicles, loading, cleanup]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -213,9 +260,8 @@ const useRealtimeVehicles = ({
     error,
     lastUpdate,
     refresh,
+    retryCount: retryAttempt,
   };
 };
 
 export default useRealtimeVehicles;
-
-
