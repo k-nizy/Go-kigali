@@ -243,7 +243,7 @@ const MapPage = () => {
   }, [refreshVehicles, showStops, currentLocation, realtimeEnabled, vehicles.length]);
 
   // Fetch nearby stops with ETA
-  const fetchStops = useCallback(async () => {
+  const fetchStops = useCallback(async (radius = 5.0, retryWithLargerRadius = true) => {
     const location = userLocation || mapCenter;
     if (!location || !location.lat || !location.lng) {
       console.warn('No location available for fetching stops', { userLocation, mapCenter });
@@ -251,29 +251,48 @@ const MapPage = () => {
       return;
     }
 
-    console.log('Fetching stops for location:', location);
-    setStopsLoading(true);
+    console.log('Fetching stops for location:', location, 'with radius:', radius);
+    // Only set loading on initial call, not retries
+    if (radius === 5.0) {
+      setStopsLoading(true);
+    }
+    
     try {
       // Use stops with ETA endpoint for real-time data
       const response = await apiService.stops.getWithETA(
         location.lat,
         location.lng,
-        2.0 // 2km radius
+        radius
       );
 
       console.log('Stops API response:', response.data);
       
       if (response.data && response.data.stops) {
-        setStops(response.data.stops);
-        if (response.data.stops.length === 0) {
-          console.log('No stops found in radius');
-          toast('No stops found nearby. Try increasing the search radius.');
+        const foundStops = response.data.stops;
+        setStops(foundStops);
+        if (foundStops.length === 0) {
+          console.log('No stops found in radius:', radius);
+          // Automatically retry with larger radius if enabled
+          if (retryWithLargerRadius && radius < 10.0) {
+            console.log('Retrying with larger radius:', radius * 2);
+            await fetchStops(radius * 2, true);
+            return;
+          } else {
+            // Only show toast if we've exhausted retries
+            toast('No stops found nearby. The search radius has been increased automatically.', {
+              icon: 'ℹ️',
+              duration: 3000,
+            });
+            setStopsLoading(false);
+          }
         } else {
-          console.log(`Loaded ${response.data.stops.length} stops`);
+          console.log(`Loaded ${foundStops.length} stops within ${radius}km`);
+          setStopsLoading(false);
         }
       } else {
         console.warn('No stops data in response', response);
         setStops([]);
+        setStopsLoading(false);
       }
     } catch (error) {
       console.error('Error fetching stops with ETA:', error);
@@ -290,14 +309,26 @@ const MapPage = () => {
         const fallbackResponse = await apiService.stops.getNearby(
           location.lat,
           location.lng,
-          2.0
+          radius
         );
         if (fallbackResponse.data && fallbackResponse.data.stops) {
-          setStops(fallbackResponse.data.stops);
-          console.log(`Loaded ${fallbackResponse.data.stops.length} stops from fallback endpoint`);
+          const foundStops = fallbackResponse.data.stops;
+          setStops(foundStops);
+          if (foundStops.length === 0 && retryWithLargerRadius && radius < 10.0) {
+            console.log('Retrying fallback with larger radius:', radius * 2);
+            await fetchStops(radius * 2, true);
+            return;
+          }
+          console.log(`Loaded ${foundStops.length} stops from fallback endpoint`);
+          setStopsLoading(false);
         } else {
           console.warn('No stops found in fallback response');
+          if (retryWithLargerRadius && radius < 10.0) {
+            await fetchStops(radius * 2, true);
+            return;
+          }
           setStops([]);
+          setStopsLoading(false);
         }
       } catch (fallbackError) {
         console.error('Fallback stops fetch failed:', fallbackError);
@@ -307,11 +338,13 @@ const MapPage = () => {
           status: fallbackError.response?.status,
           location: location,
         });
-        toast.error(`Failed to load stops: ${errorMsg}`);
+        // Only show error toast if it's not a simple "no stops found" case
+        if (fallbackError.response?.status !== 404) {
+          toast.error(`Failed to load stops: ${errorMsg}`);
+        }
         setStops([]);
+        setStopsLoading(false);
       }
-    } finally {
-      setStopsLoading(false);
     }
   }, [userLocation, mapCenter]);
 
