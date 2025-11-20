@@ -2,7 +2,7 @@
 
 Complete, secure, and production-ready authentication system with Flask backend and React frontend.
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Using Docker (Recommended)
 
@@ -80,7 +80,7 @@ npm start
 npm run build
 ```
 
-## 📋 Features
+##  Features
 
 ### Backend Features
 - ✅ User registration with email verification
@@ -108,7 +108,7 @@ npm run build
 - ✅ Toast notifications
 - ✅ Comprehensive tests
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Tech Stack
 
@@ -187,7 +187,7 @@ kigali-go/
 └── AUTH_SYSTEM_README.md (this file)
 ```
 
-## 🔐 Security Features
+##  Security Features
 
 ### Password Security
 - Minimum 12 characters
@@ -214,7 +214,7 @@ kigali-go/
 - SQL injection prevention (SQLAlchemy ORM)
 - XSS prevention (React escaping + CSP headers)
 
-## 📡 API Documentation
+##  API Documentation
 
 ### Base URL
 ```
@@ -349,7 +349,7 @@ Response: 200
 }
 ```
 
-## 🧪 Testing
+##  Testing
 
 ### Backend Tests
 
@@ -404,7 +404,7 @@ npm test
 - Token refresh flow
 - Error handling
 
-## 🚢 Deployment
+##  Deployment
 
 ### Environment Variables
 
@@ -458,7 +458,7 @@ docker-compose -f docker-compose.auth.yml down -v
 - [ ] Enable rate limiting
 - [ ] Set up CI/CD pipeline
 
-## 🔧 Configuration
+##  Configuration
 
 ### Backend Configuration
 
@@ -486,7 +486,7 @@ Edit `frontend/src/services/authApi.js`:
 timeout: 10000  // 10 seconds
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 ### Health Checks
 
@@ -514,7 +514,7 @@ docker-compose -f docker-compose.auth.yml logs -f frontend
 docker-compose -f docker-compose.auth.yml logs -f postgres
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -543,13 +543,13 @@ docker-compose -f docker-compose.auth.yml logs -f postgres
 - Check test environment variables
 - Verify all dependencies installed
 
-## 📚 Additional Documentation
+##  Additional Documentation
 
 - **Backend**: See `backend/README.md`
 - **Frontend**: See `frontend/AUTH_README.md`
 - **API**: See inline documentation in `backend/app/resources/auth.py`
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -582,11 +582,11 @@ npm run lint
 npm run format
 ```
 
-## 📄 License
+##  License
 
 MIT License - See LICENSE file for details
 
-## 🆘 Support
+##  Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
 - **Email**: support@kigaligo.com
@@ -609,7 +609,7 @@ All acceptance criteria from the specification have been met:
 ✅ Remember me affects session duration  
 ✅ Comprehensive test coverage  
 
-## 🎯 Next Steps
+##  Next Steps
 
 1. **Email Integration**: Configure production email service (SendGrid, AWS SES)
 2. **OAuth**: Add Google/Facebook OAuth (optional)
