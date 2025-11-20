@@ -244,6 +244,40 @@ def seed_vehicles_public():
             Vehicle.is_active == True
         ).count()
         
+        # Test: Check if vehicles are visible from a test location
+        import math
+        def calculate_distance_km(lat1, lng1, lat2, lng2):
+            """Calculate distance using Haversine formula"""
+            R = 6371  # Earth's radius in kilometers
+            dlat = math.radians(lat2 - lat1)
+            dlng = math.radians(lng2 - lng1)
+            a = (math.sin(dlat / 2) ** 2 +
+                 math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
+                 math.sin(dlng / 2) ** 2)
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            return R * c
+        test_lat = -1.9595
+        test_lng = 30.0941
+        test_radius = 5.0
+        
+        static_vehicles = Vehicle.query.filter(
+            Vehicle.registration.like('STATIC%'),
+            Vehicle.is_active == True,
+            Vehicle.current_lat.isnot(None),
+            Vehicle.current_lng.isnot(None)
+        ).all()
+        
+        visible_static = []
+        for v in static_vehicles:
+            distance = calculate_distance_km(test_lat, test_lng, v.current_lat, v.current_lng)
+            if distance <= test_radius:
+                visible_static.append({
+                    'registration': v.registration,
+                    'distance_km': round(distance, 2),
+                    'lat': v.current_lat,
+                    'lng': v.current_lng
+                })
+        
         return jsonify({
             'message': f'Successfully seeded vehicles: {static_created} static created, {static_updated} static updated, {random_created} random vehicles added',
             'static_created': static_created,
@@ -252,12 +286,22 @@ def seed_vehicles_public():
             'total_static_vehicles': static_count,
             'total_active_vehicles': total_active,
             'vehicles_with_coordinates': total_with_coords,
+            'test_visibility': {
+                'test_location': {'lat': test_lat, 'lng': test_lng},
+                'test_radius_km': test_radius,
+                'visible_static_vehicles': len(visible_static),
+                'static_vehicles_details': visible_static
+            },
             'timestamp': datetime.utcnow().isoformat()
         }), 200
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Failed to seed vehicles: {str(e)}'}), 500
+        import traceback
+        return jsonify({
+            'error': f'Failed to seed vehicles: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
 
 @admin_bp.route('/seed/stops', methods=['POST'])
 def seed_stops():
@@ -405,11 +449,14 @@ def seed_data():
 
 def seed_static_vehicles():
     """Seed 5 static vehicles with fixed coordinates that always exist"""
-    # Default map center coordinates (Kigali center)
-    center_lat = -1.9441
-    center_lng = 30.0619
+    # Use a location that's more likely to be near users
+    # Based on logs, users are around -1.9595, 30.0941
+    # Place vehicles in a cluster around this area, all within 3km of each other
+    base_lat = -1.9595
+    base_lng = 30.0941
     
     # 5 static vehicles with fixed coordinates (always the same)
+    # All within 2-3km of base location to ensure visibility
     static_vehicles = [
         {
             'vehicle_type': 'bus',
@@ -418,8 +465,8 @@ def seed_static_vehicles():
             'capacity': 50,
             'route_id': 'RT001',
             'route_name': 'Nyabugogo - Kacyiru',
-            'current_lat': center_lat + 0.02,  # ~2.2km north
-            'current_lng': center_lng + 0.01,  # ~1.1km east
+            'current_lat': base_lat + 0.01,  # ~1.1km north
+            'current_lng': base_lng + 0.01,  # ~1.1km east
         },
         {
             'vehicle_type': 'bus',
@@ -428,8 +475,8 @@ def seed_static_vehicles():
             'capacity': 50,
             'route_id': 'RT002',
             'route_name': 'Kimironko - Nyabugogo',
-            'current_lat': center_lat - 0.015,  # ~1.7km south
-            'current_lng': center_lng + 0.02,  # ~2.2km east
+            'current_lat': base_lat - 0.01,  # ~1.1km south
+            'current_lng': base_lng + 0.015,  # ~1.7km east
         },
         {
             'vehicle_type': 'taxi',
@@ -437,8 +484,8 @@ def seed_static_vehicles():
             'operator': 'Private',
             'capacity': 4,
             'fuel_type': 'petrol',
-            'current_lat': center_lat + 0.01,  # ~1.1km north
-            'current_lng': center_lng - 0.02,  # ~2.2km west
+            'current_lat': base_lat + 0.015,  # ~1.7km north
+            'current_lng': base_lng - 0.01,  # ~1.1km west
         },
         {
             'vehicle_type': 'taxi',
@@ -446,8 +493,8 @@ def seed_static_vehicles():
             'operator': 'Private',
             'capacity': 4,
             'fuel_type': 'hybrid',
-            'current_lat': center_lat - 0.02,  # ~2.2km south
-            'current_lng': center_lng - 0.01,  # ~1.1km west
+            'current_lat': base_lat - 0.005,  # ~0.6km south
+            'current_lng': base_lng - 0.015,  # ~1.7km west
         },
         {
             'vehicle_type': 'moto',
@@ -455,8 +502,8 @@ def seed_static_vehicles():
             'operator': 'Private',
             'capacity': 2,
             'fuel_type': 'petrol',
-            'current_lat': center_lat + 0.025,  # ~2.8km north
-            'current_lng': center_lng + 0.015,  # ~1.7km east
+            'current_lat': base_lat + 0.02,  # ~2.2km north
+            'current_lng': base_lng + 0.005,  # ~0.6km east
         },
     ]
     
@@ -504,9 +551,9 @@ def seed_static_vehicles():
 
 def seed_random_vehicles(count=None):
     """Seed random vehicles (1-5 additional vehicles)"""
-    # Default map center coordinates (Kigali center)
-    center_lat = -1.9441
-    center_lng = 30.0619
+    # Use same base location as static vehicles for consistency
+    base_lat = -1.9595
+    base_lng = 30.0941
     
     # Determine how many random vehicles to create (1-5)
     if count is None:
@@ -548,9 +595,9 @@ def seed_random_vehicles(count=None):
         
         vehicle = Vehicle(**vehicle_data)
         
-        # Random location within 4km of center
-        vehicle.current_lat = center_lat + random.uniform(-0.04, 0.04)
-        vehicle.current_lng = center_lng + random.uniform(-0.04, 0.04)
+        # Random location within 3km of base location (well within 5km search radius)
+        vehicle.current_lat = base_lat + random.uniform(-0.03, 0.03)
+        vehicle.current_lng = base_lng + random.uniform(-0.03, 0.03)
         vehicle.bearing = random.uniform(0, 360)
         vehicle.speed = random.uniform(20, 60)
         vehicle.is_active = True
