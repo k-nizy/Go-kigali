@@ -3,7 +3,7 @@ Enhanced map-related API routes for Google Maps integration
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, optional_jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from models.vehicle import Vehicle
 from models.stop import Stop
@@ -224,7 +224,7 @@ def get_nearby_stops():
 
 
 @map_bp.route('/user/location', methods=['POST'])
-@optional_jwt_required()
+@jwt_required(optional=True)
 def update_user_location():
     """
     Store or update user's current location for ETA calculations and trip tracking

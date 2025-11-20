@@ -48,3 +48,4 @@ class SavedLocation(db.Model):
     def __repr__(self):
         return f'<SavedLocation {self.name} ({self.location_type}) for user {self.user_id}>'
 
+

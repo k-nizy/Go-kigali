@@ -186,3 +186,4 @@ def delete_saved_location(location_id):
         current_app.logger.error(f'Error deleting saved location: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
 
+
