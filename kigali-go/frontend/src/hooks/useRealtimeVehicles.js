@@ -33,6 +33,7 @@ const useRealtimeVehicles = ({
   const intervalRef = useRef(null);
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
+  const lastTimestampRef = useRef(null); // Use ref to avoid dependency issues
 
   // Fetch vehicles function
   const fetchVehicles = useCallback(async (since = null) => {
@@ -73,6 +74,15 @@ const useRealtimeVehicles = ({
 
       const data = await response.json();
 
+      console.log('API Response:', {
+        vehicleCount: data.vehicles?.length || 0,
+        totalCount: data.count || 0,
+        hasVehicles: !!(data.vehicles && data.vehicles.length > 0),
+        timestamp: data.timestamp,
+        center: data.center,
+        radius: data.radius_km,
+      });
+
       if (isMountedRef.current) {
         if (since && data.vehicles) {
           // Update existing vehicles or add new ones
@@ -90,17 +100,22 @@ const useRealtimeVehicles = ({
             });
             
             // Convert back to array and sort by distance
-            return Array.from(vehicleMap.values()).sort(
-              (a, b) => a.distance_km - b.distance_km
+            const sorted = Array.from(vehicleMap.values()).sort(
+              (a, b) => (a.distance_km || 0) - (b.distance_km || 0)
             );
+            console.log('Updated vehicles:', sorted.length);
+            return sorted;
           });
         } else {
           // Initial load or full refresh
-          setVehicles(data.vehicles || []);
+          const vehiclesList = data.vehicles || [];
+          console.log('Setting vehicles:', vehiclesList.length, vehiclesList);
+          setVehicles(vehiclesList);
         }
         
         setLastUpdate(new Date());
         setLastTimestamp(data.timestamp);
+        lastTimestampRef.current = data.timestamp; // Update ref as well
       }
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -161,8 +176,9 @@ const useRealtimeVehicles = ({
     
     intervalRef.current = setInterval(() => {
       if (isMountedRef.current && location && location.lat && location.lng && enabled) {
-        console.log('useRealtimeVehicles: Polling update', { lastTimestamp });
-        fetchVehicles(lastTimestamp);
+        console.log('useRealtimeVehicles: Polling update', { lastTimestamp: lastTimestampRef.current });
+        // Use ref to get the latest timestamp without causing re-renders
+        fetchVehicles(lastTimestampRef.current);
       }
     }, interval);
 
@@ -176,7 +192,7 @@ const useRealtimeVehicles = ({
         abortControllerRef.current.abort();
       }
     };
-  }, [enabled, location?.lat, location?.lng, interval, fetchVehicles, lastTimestamp]);
+  }, [enabled, location?.lat, location?.lng, interval, fetchVehicles]);
 
   // Cleanup on unmount
   useEffect(() => {

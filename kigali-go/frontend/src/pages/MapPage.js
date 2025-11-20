@@ -79,43 +79,8 @@ const MapPage = () => {
   // Only use local state if hook hasn't loaded anything yet
   const vehicles = hookVehicles.length > 0 ? hookVehicles : (vehiclesState.length > 0 ? vehiclesState : []);
 
-  // Force initial vehicle load on mount (even if realtime is off)
-  useEffect(() => {
-    const loadInitialVehicles = async () => {
-      const location = currentLocation;
-      if (!location?.lat || !location?.lng) {
-        console.log('No location for initial vehicle load');
-        return;
-      }
-
-      console.log('Loading initial vehicles...', { location });
-      
-      try {
-        const response = await fetch(
-          `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=5`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Initial vehicles loaded:', data.vehicles?.length || 0, data);
-          if (data.vehicles && data.vehicles.length > 0) {
-            setVehiclesState(data.vehicles);
-            // Removed toast notification as requested
-          } else {
-            console.warn('No vehicles in response');
-          }
-        } else {
-          console.error('Failed to load vehicles:', response.status);
-        }
-      } catch (err) {
-        console.error('Error loading initial vehicles:', err);
-      }
-    };
-
-    // Load after a short delay to ensure map is ready
-    const timer = setTimeout(loadInitialVehicles, 500);
-    return () => clearTimeout(timer);
-  }, []); // Only run once on mount
+  // Remove duplicate initial load - the hook handles this
+  // The useRealtimeVehicles hook will fetch vehicles automatically when enabled
 
   // Debug: Log vehicles state
   useEffect(() => {
