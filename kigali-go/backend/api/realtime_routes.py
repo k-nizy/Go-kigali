@@ -83,20 +83,33 @@ def get_realtime_vehicles():
             except ValueError:
                 return jsonify({'error': 'Invalid timestamp format. Use ISO 8601 format.'}), 400
         
-        # Query active vehicles
-        query = db.session.query(Vehicle).filter(Vehicle.is_active == True)
+        # Query active vehicles with coordinates
+        query = db.session.query(Vehicle).filter(
+            Vehicle.is_active == True,
+            Vehicle.current_lat.isnot(None),
+            Vehicle.current_lng.isnot(None)
+        )
         
-        # Filter by last_seen if since timestamp provided
+        # Filter by last_seen if since timestamp provided (for incremental updates)
+        # But always include static vehicles (STATIC*) regardless of timestamp
         if since:
-            # Only get vehicles updated since last check
-            query = query.filter(Vehicle.updated_at >= since)
+            # Get vehicles updated since last check OR static vehicles
+            query = query.filter(
+                (Vehicle.updated_at >= since) | (Vehicle.registration.like('STATIC%'))
+            )
         
         if vehicle_type:
             query = query.filter(Vehicle.vehicle_type == vehicle_type)
         
         vehicles = query.all()
         
+        # Log for debugging
+        current_app.logger.info(f'Found {len(vehicles)} active vehicles with coordinates')
+        
         nearby_vehicles = []
+        vehicles_without_coords = 0
+        vehicles_outside_radius = 0
+        
         for vehicle in vehicles:
             if vehicle.current_lat and vehicle.current_lng:
                 # Calculate distance
@@ -117,6 +130,17 @@ def get_realtime_vehicles():
                     vehicle_dict['updated_at'] = vehicle.updated_at.isoformat() if vehicle.updated_at else None
                     
                     nearby_vehicles.append(vehicle_dict)
+                else:
+                    vehicles_outside_radius += 1
+            else:
+                vehicles_without_coords += 1
+        
+        # Log results for debugging
+        current_app.logger.info(
+            f'Vehicle search results: {len(nearby_vehicles)} nearby, '
+            f'{vehicles_outside_radius} outside radius, '
+            f'{vehicles_without_coords} without coords'
+        )
         
         # Sort by distance
         nearby_vehicles.sort(key=lambda x: x['distance_km'])
@@ -127,7 +151,13 @@ def get_realtime_vehicles():
             'center': {'lat': lat, 'lng': lng},
             'radius_km': radius,
             'timestamp': datetime.utcnow().isoformat(),
-            'has_updates': len(nearby_vehicles) > 0
+            'has_updates': len(nearby_vehicles) > 0,
+            'debug': {
+                'total_vehicles_queried': len(vehicles),
+                'vehicles_without_coords': vehicles_without_coords,
+                'vehicles_outside_radius': vehicles_outside_radius,
+                'nearby_vehicles': len(nearby_vehicles)
+            }
         })
         
     except ValueError as e:

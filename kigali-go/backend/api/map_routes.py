@@ -74,13 +74,20 @@ def get_nearby_vehicles():
         if lat == 0 and lng == 0:
             return jsonify({'error': 'Valid coordinates are required'}), 400
         
-        # Query active vehicles
-        query = db.session.query(Vehicle).filter(Vehicle.is_active == True)
+        # Query active vehicles with coordinates
+        query = db.session.query(Vehicle).filter(
+            Vehicle.is_active == True,
+            Vehicle.current_lat.isnot(None),
+            Vehicle.current_lng.isnot(None)
+        )
         
         if vehicle_type:
             query = query.filter(Vehicle.vehicle_type == vehicle_type)
         
         vehicles = query.all()
+        
+        # Log for debugging
+        current_app.logger.info(f'Map API: Found {len(vehicles)} active vehicles with coordinates')
         
         nearby_vehicles = []
         for vehicle in vehicles:

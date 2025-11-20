@@ -181,6 +181,46 @@ def update_report(report_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@admin_bp.route('/vehicles/status', methods=['GET'])
+def get_vehicles_status():
+    """Get status of all vehicles for debugging"""
+    try:
+        total_vehicles = Vehicle.query.count()
+        active_vehicles = Vehicle.query.filter_by(is_active=True).count()
+        vehicles_with_coords = Vehicle.query.filter(
+            Vehicle.is_active == True,
+            Vehicle.current_lat.isnot(None),
+            Vehicle.current_lng.isnot(None)
+        ).count()
+        static_vehicles = Vehicle.query.filter(
+            Vehicle.registration.like('STATIC%'),
+            Vehicle.is_active == True
+        ).count()
+        
+        # Sample vehicles
+        sample_vehicles = Vehicle.query.filter_by(is_active=True).limit(5).all()
+        samples = [{
+            'id': v.id,
+            'registration': v.registration,
+            'type': v.vehicle_type,
+            'has_coords': bool(v.current_lat and v.current_lng),
+            'lat': v.current_lat,
+            'lng': v.current_lng,
+            'is_active': v.is_active
+        } for v in sample_vehicles]
+        
+        return jsonify({
+            'total_vehicles': total_vehicles,
+            'active_vehicles': active_vehicles,
+            'vehicles_with_coordinates': vehicles_with_coords,
+            'static_vehicles': static_vehicles,
+            'sample_vehicles': samples,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get vehicle status: {str(e)}'}), 500
+
 @admin_bp.route('/seed/vehicles', methods=['POST'])
 @limiter.limit("10 per hour")  # Limit to prevent abuse
 def seed_vehicles_public():
