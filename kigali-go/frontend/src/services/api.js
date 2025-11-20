@@ -5,10 +5,11 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // Increased from 10s to 30s
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Ensure cookies are sent with requests
 });
 
 // Request interceptor
@@ -32,15 +33,30 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    const originalRequest = error.config;
+    
     // Log error for debugging
-    logError(error, { context: 'response_interceptor' });
+    logError(error, { 
+      context: 'response_interceptor',
+      url: originalRequest?.url,
+      method: originalRequest?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
     
     // Handle authentication errors
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
       localStorage.removeItem('access_token');
-      // Don't redirect immediately, let the component handle it
-      // This prevents redirect loops during API calls
+      // Optionally: Trigger a refresh token flow here
     }
+    
+    // Handle timeouts specifically
+    if (error.code === 'ECONNABORTED') {
+      error.message = 'Request timed out. The server is taking too long to respond.';
+    }
+    
+    // Add more specific error handling as needed
     
     return Promise.reject(error);
   }

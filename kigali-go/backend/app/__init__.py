@@ -3,7 +3,7 @@ Flask application factory for KigaliGo Auth System
 """
 from flask import Flask, jsonify
 from flask_cors import CORS
-from app.extensions import db, migrate, jwt, limiter, ma, bcrypt
+from app.extensions import db, migrate, jwt, limiter, ma, bcrypt, cache
 from app.config import config_by_name
 from utils.error_handlers import register_error_handlers
 import os
@@ -58,6 +58,7 @@ def create_app(config_name: str = None) -> Flask:
     limiter.init_app(app)
     ma.init_app(app)
     bcrypt.init_app(app)
+    cache.init_app(app)
     
     # Configure CORS
     CORS(app, 
