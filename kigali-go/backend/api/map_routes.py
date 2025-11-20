@@ -3,6 +3,7 @@ Enhanced map-related API routes for Google Maps integration
 """
 
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity, optional_jwt_required
 from app.extensions import db
 from models.vehicle import Vehicle
 from models.stop import Stop
@@ -219,6 +220,79 @@ def get_nearby_stops():
         return jsonify({'error': f'Invalid parameter: {str(e)}'}), 400
     except Exception as e:
         current_app.logger.error(f'Error fetching nearby stops: {str(e)}')
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@map_bp.route('/user/location', methods=['POST'])
+@optional_jwt_required()
+def update_user_location():
+    """
+    Store or update user's current location for ETA calculations and trip tracking
+    This endpoint is optional (works with or without authentication)
+    
+    Request body:
+    {
+        "lat": float (required),
+        "lng": float (required),
+        "accuracy": float (optional, in meters),
+        "heading": float (optional, in degrees),
+        "speed": float (optional, in m/s),
+        "timestamp": string (optional, ISO8601 format)
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        lat = data.get('lat')
+        lng = data.get('lng')
+        
+        if lat is None or lng is None:
+            return jsonify({'error': 'Latitude and longitude are required'}), 400
+        
+        # Validate coordinates
+        if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+            return jsonify({'error': 'Invalid coordinates'}), 400
+        
+        user_id = None
+        try:
+            user_id = get_jwt_identity()
+        except:
+            # Not authenticated, that's okay - we can still use the location for calculations
+            pass
+        
+        # Store location data (in a real implementation, you might want to store this in a database)
+        # For now, we'll just acknowledge receipt and use it for ETA calculations
+        location_data = {
+            'lat': float(lat),
+            'lng': float(lng),
+            'accuracy': data.get('accuracy'),
+            'heading': data.get('heading'),
+            'speed': data.get('speed'),
+            'timestamp': data.get('timestamp') or datetime.utcnow().isoformat(),
+            'user_id': user_id,
+        }
+        
+        # Log location update (in production, you might store this in a user_locations table)
+        current_app.logger.info(f'User location update: {location_data}')
+        
+        # In a full implementation, you could:
+        # 1. Store in user_locations table for history
+        # 2. Update user's last_known_location
+        # 3. Use for real-time ETA calculations
+        
+        return jsonify({
+            'success': True,
+            'message': 'Location updated successfully',
+            'location': {
+                'lat': location_data['lat'],
+                'lng': location_data['lng'],
+                'timestamp': location_data['timestamp']
+            }
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter: {str(e)}'}), 400
+    except Exception as e:
+        current_app.logger.error(f'Error updating user location: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
 
 

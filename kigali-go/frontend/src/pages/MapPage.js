@@ -40,15 +40,14 @@ import UserLocationMarker from '../components/map/UserLocationMarker';
 import { apiService } from '../services/api';
 import { getDefaultMapCenter, getVehicleColor } from '../utils/googleMapsUtils';
 import useRealtimeVehicles from '../hooks/useRealtimeVehicles';
+import useRealtimeLocation from '../hooks/useRealtimeLocation';
 
 const MapPage = () => {
   const { t } = useTranslation();
   const { mode } = useThemeMode();
   const [map, setMap] = useState(null);
   const [stops, setStops] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState(getDefaultMapCenter());
-  const [loading, setLoading] = useState(false);
   const [stopsLoading, setStopsLoading] = useState(false);
   const [showStops, setShowStops] = useState(true);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('all');
@@ -56,9 +55,32 @@ const MapPage = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds default (reduced to avoid rate limits)
   const [vehiclesState, setVehiclesState] = useState([]); // Local state for vehicles
+  const [locationTrackingEnabled, setLocationTrackingEnabled] = useState(true);
+  const [autoCenterMap, setAutoCenterMap] = useState(false); // Don't auto-center by default to avoid jarring movements
+  const [locationUpdateInterval, setLocationUpdateInterval] = useState(10000); // 10 seconds default
+
+  // Real-time location tracking hook
+  const {
+    location: userLocation,
+    loading: locationLoading,
+    error: locationError,
+    permissionStatus,
+    isTracking,
+    isSupported: isLocationSupported,
+    requestLocation,
+    startTracking,
+    stopTracking,
+  } = useRealtimeLocation({
+    updateInterval: locationUpdateInterval,
+    enabled: locationTrackingEnabled,
+    highAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0,
+    autoRequest: true,
+  });
 
   // Always use a valid location (userLocation or mapCenter)
-  const currentLocation = userLocation || mapCenter;
+  const currentLocation = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : mapCenter;
 
   // Real-time vehicle tracking hook
   const {
@@ -104,78 +126,33 @@ const MapPage = () => {
     }
   }, [vehicles, vehiclesLoading, vehiclesError, currentLocation, realtimeEnabled, map]);
 
-  // Get user's current location (one-time)
-  const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser');
-      return;
+  // Handle manual location request
+  const getCurrentLocation = useCallback(async () => {
+    const location = await requestLocation();
+    if (location && map) {
+      setMapCenter({ lat: location.lat, lng: location.lng });
+      map.setCenter({ lat: location.lat, lng: location.lng });
+      map.setZoom(14);
     }
+  }, [map, requestLocation]);
 
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        setUserLocation(location);
-        setMapCenter(location);
-        if (map) {
-          map.setCenter(location);
-          map.setZoom(14);
-        }
-        toast.success('Location found!');
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('Could not get your location. Please enable location services.');
-        setLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-  }, [map]);
-
-  // Continuous location tracking (watchPosition)
+  // Update map center when user location changes (if auto-center is enabled)
   useEffect(() => {
-    if (!realtimeEnabled || !navigator.geolocation) {
-      return;
+    if (autoCenterMap && userLocation && map) {
+      map.setCenter({ lat: userLocation.lat, lng: userLocation.lng });
     }
+  }, [autoCenterMap, userLocation, map]);
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        setUserLocation(location);
-        setMapCenter(location);
-        if (map) {
-          map.setCenter(location);
-        }
-      },
-      (error) => {
-        console.error('Geolocation watch error:', error);
-        // Don't show error toast for watchPosition, just log
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-
-    // Cleanup
-    return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-    };
-  }, [realtimeEnabled, map]);
+  // Update map center when location is first obtained
+  useEffect(() => {
+    if (userLocation && map && !mapCenter.lat && !mapCenter.lng) {
+      // First time getting location, center the map
+      const location = { lat: userLocation.lat, lng: userLocation.lng };
+      setMapCenter(location);
+      map.setCenter(location);
+      map.setZoom(14);
+    }
+  }, [userLocation, map, mapCenter]);
 
   // Manual refresh function (for button click)
   const handleManualRefresh = useCallback(async () => {
@@ -448,6 +425,9 @@ const MapPage = () => {
                     position={userLocation}
                     showRadius={true}
                     radiusKm={5}
+                    accuracy={userLocation.accuracy}
+                    heading={userLocation.heading}
+                    animated={true}
                   />
                 )}
 
@@ -492,14 +472,27 @@ const MapPage = () => {
               >
                 <IconButton
                   onClick={getCurrentLocation}
-                  disabled={loading}
+                  disabled={locationLoading || !isLocationSupported}
                   sx={{
                     bgcolor: 'background.paper',
                     '&:hover': { bgcolor: 'background.paper' },
                     boxShadow: 2,
+                    ...(isTracking && {
+                      color: 'primary.main',
+                    }),
+                    ...(permissionStatus === 'denied' && {
+                      color: 'error.main',
+                    }),
                   }}
+                  title={
+                    permissionStatus === 'denied'
+                      ? 'Location permission denied. Click to request again.'
+                      : isTracking
+                      ? 'Location tracking active'
+                      : 'Get my location'
+                  }
                 >
-                  {loading ? <CircularProgress size={24} /> : <MyLocation />}
+                  {locationLoading ? <CircularProgress size={24} /> : <MyLocation />}
                 </IconButton>
                 <IconButton
                   onClick={handleManualRefresh}
@@ -543,7 +536,7 @@ const MapPage = () => {
                   const newValue = !showStops;
                   setShowStops(newValue);
                   // Fetch stops when toggled on
-                  if (newValue && (userLocation || mapCenter)) {
+                  if (newValue && currentLocation) {
                     fetchStops();
                   } else if (!newValue) {
                     setStops([]);
@@ -573,11 +566,61 @@ const MapPage = () => {
                 {realtimeEnabled ? 'Realtime ON' : 'Realtime OFF'}
               </Button>
               
+              <Button
+                variant={locationTrackingEnabled ? 'contained' : 'outlined'}
+                color={locationTrackingEnabled ? 'primary' : 'default'}
+                onClick={() => {
+                  const newValue = !locationTrackingEnabled;
+                  setLocationTrackingEnabled(newValue);
+                  if (newValue) {
+                    startTracking();
+                    toast.success('Location tracking enabled');
+                  } else {
+                    stopTracking();
+                    toast('Location tracking disabled');
+                  }
+                }}
+                size="small"
+                startIcon={<MyLocation />}
+                disabled={!isLocationSupported || permissionStatus === 'denied'}
+              >
+                {locationTrackingEnabled ? 'Location ON' : 'Location OFF'}
+              </Button>
+
+              <Button
+                variant={autoCenterMap ? 'contained' : 'outlined'}
+                color={autoCenterMap ? 'info' : 'default'}
+                onClick={() => setAutoCenterMap(!autoCenterMap)}
+                size="small"
+                startIcon={<MyLocation />}
+                title="Auto-center map on your location"
+              >
+                {autoCenterMap ? 'Auto-Center ON' : 'Auto-Center OFF'}
+              </Button>
+              
               {realtimeEnabled && lastUpdate && (
                 <Chip
                   label={`Updated ${new Date(lastUpdate).toLocaleTimeString()}`}
                   size="small"
                   color="success"
+                  sx={{ ml: 1 }}
+                />
+              )}
+
+              {isTracking && userLocation && (
+                <Chip
+                  label={`Location: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`}
+                  size="small"
+                  color="primary"
+                  sx={{ ml: 1 }}
+                />
+              )}
+
+              {permissionStatus === 'denied' && (
+                <Chip
+                  label="Location permission denied"
+                  size="small"
+                  color="error"
                   sx={{ ml: 1 }}
                 />
               )}

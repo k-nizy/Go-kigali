@@ -97,6 +97,11 @@ export const apiService = {
     },
   },
 
+  // User location
+  location: {
+    update: (data) => api.post('/api/v1/map/user/location', data),
+  },
+
   // Zones and stops
   zones: {
     getAll: () => api.get('/api/v1/zones'),
