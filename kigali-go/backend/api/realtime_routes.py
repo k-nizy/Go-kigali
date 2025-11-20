@@ -58,6 +58,37 @@ def handle_errors(f):
 
 realtime_bp = Blueprint('realtime', __name__)
 
+@realtime_bp.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify database connection and data"""
+    try:
+        # Check database connection
+        db.session.execute('SELECT 1')
+        
+        # Check if vehicles table exists and has data
+        from models.vehicle import Vehicle
+        total_vehicles = db.session.query(Vehicle).count()
+        active_vehicles = db.session.query(Vehicle).filter(Vehicle.is_active == True).count()
+        
+        return jsonify({
+            'status': 'success',
+            'database': 'connected',
+            'vehicles': {
+                'total': total_vehicles,
+                'active': active_vehicles,
+                'with_location': db.session.query(Vehicle).filter(
+                    Vehicle.current_lat.isnot(None),
+                    Vehicle.current_lng.isnot(None)
+                ).count()
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'database': 'connection_failed',
+            'error': str(e)
+        }), 500
+
 
 def calculate_distance_km(lat1, lng1, lat2, lng2):
     """
@@ -199,6 +230,9 @@ def get_realtime_vehicles():
         lat_radius = radius / 111.0
         lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
         
+        # Log query parameters for debugging
+        logger.debug(f"Querying vehicles with params: lat={lat}, lng={lng}, radius={radius}, vehicle_type={vehicle_type}, since={since}")
+        
         # Build base query
         query = db.session.query(
             Vehicle.id,
@@ -216,6 +250,15 @@ def get_realtime_vehicles():
             Vehicle.current_lat.between(lat - lat_radius, lat + lat_radius),
             Vehicle.current_lng.between(lng - lng_radius, lng + lng_radius)
         )
+        
+        logger.debug(f"Base query SQL: {str(query)}")
+        
+        # Log the number of active vehicles in the database (for debugging)
+        try:
+            total_vehicles = db.session.query(Vehicle).filter(Vehicle.is_active == True).count()
+            logger.debug(f"Total active vehicles in database: {total_vehicles}")
+        except Exception as e:
+            logger.error(f"Error counting total vehicles: {str(e)}")
         
         # Apply filters
         if since:
@@ -277,11 +320,15 @@ def get_realtime_vehicles():
             'code': 400
         }), 400
     except Exception as e:
-        logger.error(f'Error fetching real-time vehicles: {str(e)}', exc_info=True)
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f'Error fetching real-time vehicles: {str(e)}\n{error_details}')
         return jsonify({
             'status': 'error',
-            'message': 'Internal server error',
-            'code': 500
+            'message': f'Internal server error: {str(e)}',
+            'code': 500,
+            'details': str(e),
+            'type': type(e).__name__
         }), 500
 
 
@@ -379,5 +426,44 @@ def get_stops_with_eta():
     except Exception as e:
         current_app.logger.error(f'Error fetching stops with ETA: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
-
+# Add this new debug endpoint after the health_check function
+@realtime_bp.route('/vehicles/debug', methods=['GET'])
+def debug_vehicles():
+    """Debug endpoint to check vehicle data"""
+    try:
+        # Get all vehicles with basic info
+        vehicles = db.session.query(
+            Vehicle.id,
+            Vehicle.registration,
+            Vehicle.vehicle_type,
+            Vehicle.current_lat,
+            Vehicle.current_lng,
+            Vehicle.is_active,
+            Vehicle.updated_at
+        ).all()
+        
+        # Convert to list of dicts for JSON serialization
+        vehicle_list = [{
+            'id': str(v.id),
+            'registration': v.registration,
+            'type': v.vehicle_type,
+            'lat': float(v.current_lat) if v.current_lat is not None else None,
+            'lng': float(v.current_lng) if v.current_lng is not None else None,
+            'is_active': v.is_active,
+            'updated_at': v.updated_at.isoformat() if v.updated_at else None
+        } for v in vehicles]
+        
+        return jsonify({
+            'status': 'success',
+            'count': len(vehicle_list),
+            'vehicles': vehicle_list
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
