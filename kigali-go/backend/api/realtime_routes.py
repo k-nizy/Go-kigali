@@ -427,7 +427,7 @@ def get_stops_with_eta():
         current_app.logger.error(f'Error fetching stops with ETA: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
 # Add this new debug endpoint after the health_check function
-@realtime_bp.route('/api/v1/realtime/vehicles/debug', methods=['GET'])
+@realtime_bp.route('/vehicles/debug', methods=['GET'])
 def debug_vehicles():
     """Debug endpoint to check vehicle data"""
     try:
