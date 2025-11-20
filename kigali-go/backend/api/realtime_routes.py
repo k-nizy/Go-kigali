@@ -52,7 +52,7 @@ def estimate_eta(distance_km, vehicle_type, traffic_factor=1.0):
 
 
 @realtime_bp.route('/vehicles/realtime', methods=['GET'])
-@limiter.limit("100 per minute")  # Higher limit for real-time data
+@limiter.limit("300 per minute")  # Increased limit for real-time data
 def get_realtime_vehicles():
     """
     Get real-time vehicle updates since last timestamp
@@ -83,11 +83,18 @@ def get_realtime_vehicles():
             except ValueError:
                 return jsonify({'error': 'Invalid timestamp format. Use ISO 8601 format.'}), 400
         
-        # Query active vehicles with coordinates
+        # Calculate bounding box for initial filtering (faster than calculating distance for all vehicles)
+        # 1 degree of latitude ~= 111 km, 1 degree of longitude varies by latitude
+        lat_radius = radius / 111.0
+        lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
+        
+        # Query only vehicles within the bounding box first (much faster than calculating distance for all)
         query = db.session.query(Vehicle).filter(
             Vehicle.is_active == True,
             Vehicle.current_lat.isnot(None),
-            Vehicle.current_lng.isnot(None)
+            Vehicle.current_lng.isnot(None),
+            Vehicle.current_lat.between(lat - lat_radius, lat + lat_radius),
+            Vehicle.current_lng.between(lng - lng_radius, lng + lng_radius)
         )
         
         # Filter by last_seen if since timestamp provided (for incremental updates)
@@ -101,45 +108,69 @@ def get_realtime_vehicles():
         if vehicle_type:
             query = query.filter(Vehicle.vehicle_type == vehicle_type)
         
-        vehicles = query.all()
+        # Only select the columns we need to reduce data transfer
+        vehicles = query.with_entities(
+            Vehicle.id,
+            Vehicle.registration,
+            Vehicle.vehicle_type,
+            Vehicle.current_lat,
+            Vehicle.current_lng,
+            Vehicle.updated_at,
+            Vehicle.heading,
+            Vehicle.speed
+        ).all()
         
         # Log for debugging
-        current_app.logger.info(f'Found {len(vehicles)} active vehicles with coordinates')
+        current_app.logger.info(f'Found {len(vehicles)} active vehicles in the area')
         
         nearby_vehicles = []
-        vehicles_without_coords = 0
-        vehicles_outside_radius = 0
         
-        for vehicle in vehicles:
-            if vehicle.current_lat and vehicle.current_lng:
-                # Calculate distance
-                distance = calculate_distance_km(
-                    lat, lng,
-                    vehicle.current_lat, vehicle.current_lng
-                )
+        # Convert to a list of dictionaries for easier manipulation
+        vehicles_data = [{
+            'id': v.id,
+            'registration': v.registration,
+            'vehicle_type': v.vehicle_type,
+            'current_lat': v.current_lat,
+            'current_lng': v.current_lng,
+            'updated_at': v.updated_at.isoformat() if v.updated_at else None,
+            'heading': v.heading,
+            'speed': v.speed
+        } for v in vehicles]
+        
+        # Sort by distance and limit to top 50 closest vehicles to reduce response size
+        vehicles_data.sort(
+            key=lambda v: calculate_distance_km(lat, lng, v['current_lat'], v['current_lng'])
+        )
+        vehicles_data = vehicles_data[:50]
+        
+        for vehicle in vehicles_data:
+            # Calculate distance (already within bounding box, so this is fine)
+            distance = calculate_distance_km(
+                lat, lng,
+                vehicle['current_lat'], vehicle['current_lng']
+            )
                 
-                if distance <= radius:
-                    # Calculate ETA
-                    eta_minutes = estimate_eta(distance, vehicle.vehicle_type)
-                    
-                    vehicle_dict = vehicle.to_dict()
-                    vehicle_dict['distance_km'] = round(distance, 2)
-                    vehicle_dict['eta_minutes'] = eta_minutes
-                    vehicle_dict['bearing'] = vehicle.bearing or 0
-                    vehicle_dict['speed'] = vehicle.speed or 0
-                    vehicle_dict['updated_at'] = vehicle.updated_at.isoformat() if vehicle.updated_at else None
-                    
-                    nearby_vehicles.append(vehicle_dict)
-                else:
-                    vehicles_outside_radius += 1
-            else:
-                vehicles_without_coords += 1
+            if distance <= radius:
+                # Calculate ETA
+                eta_minutes = estimate_eta(distance, vehicle['vehicle_type'])
+                
+                vehicle_dict = {
+                    'id': vehicle['id'],
+                    'registration': vehicle['registration'],
+                    'vehicle_type': vehicle['vehicle_type'],
+                    'current_lat': vehicle['current_lat'],
+                    'current_lng': vehicle['current_lng'],
+                    'updated_at': vehicle['updated_at'],
+                    'distance_km': round(distance, 2),
+                    'eta_minutes': eta_minutes,
+                    'bearing': vehicle.get('heading', 0) or 0,
+                    'speed': vehicle.get('speed', 0) or 0
+                }
+                nearby_vehicles.append(vehicle_dict)
         
         # Log results for debugging
         current_app.logger.info(
-            f'Vehicle search results: {len(nearby_vehicles)} nearby, '
-            f'{vehicles_outside_radius} outside radius, '
-            f'{vehicles_without_coords} without coords'
+            f'Vehicle search results: {len(nearby_vehicles)} nearby vehicles found'
         )
         
         # Sort by distance
@@ -147,17 +178,8 @@ def get_realtime_vehicles():
         
         return jsonify({
             'vehicles': nearby_vehicles,
-            'count': len(nearby_vehicles),
-            'center': {'lat': lat, 'lng': lng},
-            'radius_km': radius,
             'timestamp': datetime.utcnow().isoformat(),
-            'has_updates': len(nearby_vehicles) > 0,
-            'debug': {
-                'total_vehicles_queried': len(vehicles),
-                'vehicles_without_coords': vehicles_without_coords,
-                'vehicles_outside_radius': vehicles_outside_radius,
-                'nearby_vehicles': len(nearby_vehicles)
-            }
+            'count': len(nearby_vehicles)
         })
         
     except ValueError as e:
@@ -168,7 +190,7 @@ def get_realtime_vehicles():
 
 
 @realtime_bp.route('/stops/eta', methods=['GET'])
-@limiter.limit("100 per minute")  # Higher limit for real-time data
+@limiter.limit("300 per minute")  # Increased limit for real-time data
 def get_stops_with_eta():
     """
     Get nearby stops with ETA from nearest vehicles
