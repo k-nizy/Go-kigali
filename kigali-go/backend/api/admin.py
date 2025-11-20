@@ -184,14 +184,13 @@ def update_report(report_id):
 @admin_bp.route('/seed/vehicles', methods=['POST'])
 @limiter.limit("10 per hour")  # Limit to prevent abuse
 def seed_vehicles_public():
-    """Seed vehicles in database (public endpoint for development)"""
+    """Seed vehicles: ensures 5 static vehicles + adds 1-5 random vehicles (total 6-10)"""
     try:
-        vehicles_result = seed_vehicles()
-        if isinstance(vehicles_result, tuple):
-            vehicles_created, vehicles_updated = vehicles_result
-        else:
-            vehicles_created = vehicles_result
-            vehicles_updated = 0
+        # First ensure 5 static vehicles exist
+        static_created, static_updated = seed_static_vehicles()
+        
+        # Then add 1-5 random vehicles
+        random_created = seed_random_vehicles()
         
         total_active = Vehicle.query.filter_by(is_active=True).count()
         total_with_coords = Vehicle.query.filter(
@@ -200,10 +199,17 @@ def seed_vehicles_public():
             Vehicle.current_lng.isnot(None)
         ).count()
         
+        static_count = Vehicle.query.filter(
+            Vehicle.registration.like('STATIC%'),
+            Vehicle.is_active == True
+        ).count()
+        
         return jsonify({
-            'message': f'Successfully seeded {vehicles_created} vehicles and updated {vehicles_updated} existing vehicles',
-            'created': vehicles_created,
-            'updated': vehicles_updated,
+            'message': f'Successfully seeded vehicles: {static_created} static created, {static_updated} static updated, {random_created} random vehicles added',
+            'static_created': static_created,
+            'static_updated': static_updated,
+            'random_created': random_created,
+            'total_static_vehicles': static_count,
             'total_active_vehicles': total_active,
             'vehicles_with_coordinates': total_with_coords,
             'timestamp': datetime.utcnow().isoformat()
@@ -357,52 +363,81 @@ def seed_data():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-def seed_vehicles():
-    """Seed sample vehicles with proper coordinates and active status"""
+def seed_static_vehicles():
+    """Seed 5 static vehicles with fixed coordinates that always exist"""
     # Default map center coordinates (Kigali center)
     center_lat = -1.9441
     center_lng = 30.0619
     
-    vehicles_data = [
-        # Buses (Tap&Go)
-        {'vehicle_type': 'bus', 'registration': 'RAB001A', 'operator': 'Tap&Go', 'capacity': 50, 'route_id': 'RT001', 'route_name': 'Nyabugogo - Kacyiru'},
-        {'vehicle_type': 'bus', 'registration': 'RAB002A', 'operator': 'Tap&Go', 'capacity': 50, 'route_id': 'RT002', 'route_name': 'Kimironko - Nyabugogo'},
-        {'vehicle_type': 'bus', 'registration': 'RAB003A', 'operator': 'Tap&Go', 'capacity': 50, 'route_id': 'RT003', 'route_name': 'Remera - Kacyiru'},
-        {'vehicle_type': 'bus', 'registration': 'RAB004A', 'operator': 'Tap&Go', 'capacity': 50, 'route_id': 'RT004', 'route_name': 'Nyamirambo - Kimironko'},
-        {'vehicle_type': 'bus', 'registration': 'RAB005A', 'operator': 'Tap&Go', 'capacity': 50, 'route_id': 'RT005', 'route_name': 'Kicukiro - Nyabugogo'},
-        
-        # Taxis
-        {'vehicle_type': 'taxi', 'registration': 'RAB006A', 'operator': 'Private', 'capacity': 4, 'fuel_type': 'petrol'},
-        {'vehicle_type': 'taxi', 'registration': 'RAB007A', 'operator': 'Private', 'capacity': 4, 'fuel_type': 'petrol'},
-        {'vehicle_type': 'taxi', 'registration': 'RAB008A', 'operator': 'Private', 'capacity': 4, 'fuel_type': 'hybrid'},
-        {'vehicle_type': 'taxi', 'registration': 'RAB009A', 'operator': 'Private', 'capacity': 4, 'fuel_type': 'electric'},
-        {'vehicle_type': 'taxi', 'registration': 'RAB010A', 'operator': 'Private', 'capacity': 4, 'fuel_type': 'petrol'},
-        
-        # Motorcycles
-        {'vehicle_type': 'moto', 'registration': 'RAB011A', 'operator': 'Private', 'capacity': 2, 'fuel_type': 'petrol'},
-        {'vehicle_type': 'moto', 'registration': 'RAB012A', 'operator': 'Private', 'capacity': 2, 'fuel_type': 'petrol'},
-        {'vehicle_type': 'moto', 'registration': 'RAB013A', 'operator': 'Private', 'capacity': 2, 'fuel_type': 'electric'},
-        {'vehicle_type': 'moto', 'registration': 'RAB014A', 'operator': 'Private', 'capacity': 2, 'fuel_type': 'petrol'},
-        {'vehicle_type': 'moto', 'registration': 'RAB015A', 'operator': 'Private', 'capacity': 2, 'fuel_type': 'petrol'},
+    # 5 static vehicles with fixed coordinates (always the same)
+    static_vehicles = [
+        {
+            'vehicle_type': 'bus',
+            'registration': 'STATIC001',
+            'operator': 'Tap&Go',
+            'capacity': 50,
+            'route_id': 'RT001',
+            'route_name': 'Nyabugogo - Kacyiru',
+            'current_lat': center_lat + 0.02,  # ~2.2km north
+            'current_lng': center_lng + 0.01,  # ~1.1km east
+        },
+        {
+            'vehicle_type': 'bus',
+            'registration': 'STATIC002',
+            'operator': 'Tap&Go',
+            'capacity': 50,
+            'route_id': 'RT002',
+            'route_name': 'Kimironko - Nyabugogo',
+            'current_lat': center_lat - 0.015,  # ~1.7km south
+            'current_lng': center_lng + 0.02,  # ~2.2km east
+        },
+        {
+            'vehicle_type': 'taxi',
+            'registration': 'STATIC003',
+            'operator': 'Private',
+            'capacity': 4,
+            'fuel_type': 'petrol',
+            'current_lat': center_lat + 0.01,  # ~1.1km north
+            'current_lng': center_lng - 0.02,  # ~2.2km west
+        },
+        {
+            'vehicle_type': 'taxi',
+            'registration': 'STATIC004',
+            'operator': 'Private',
+            'capacity': 4,
+            'fuel_type': 'hybrid',
+            'current_lat': center_lat - 0.02,  # ~2.2km south
+            'current_lng': center_lng - 0.01,  # ~1.1km west
+        },
+        {
+            'vehicle_type': 'moto',
+            'registration': 'STATIC005',
+            'operator': 'Private',
+            'capacity': 2,
+            'fuel_type': 'petrol',
+            'current_lat': center_lat + 0.025,  # ~2.8km north
+            'current_lng': center_lng + 0.015,  # ~1.7km east
+        },
     ]
     
     created_count = 0
     updated_count = 0
     
-    for vehicle_data in vehicles_data:
+    for vehicle_data in static_vehicles:
+        # Extract coordinates before creating vehicle
+        current_lat = vehicle_data.pop('current_lat')
+        current_lng = vehicle_data.pop('current_lng')
+        
         existing = Vehicle.query.filter_by(registration=vehicle_data['registration']).first()
         
         if not existing:
-            # Create new vehicle
+            # Create new static vehicle
             vehicle = Vehicle(**vehicle_data)
-            
-            # Set random location within 4km of center (well within 5km search radius)
-            # 0.04 degrees ≈ 4.4km at Kigali's latitude
-            vehicle.current_lat = center_lat + random.uniform(-0.04, 0.04)
-            vehicle.current_lng = center_lng + random.uniform(-0.04, 0.04)
+            vehicle.current_lat = current_lat
+            vehicle.current_lng = current_lng
             vehicle.bearing = random.uniform(0, 360)
-            vehicle.speed = random.uniform(20, 60)  # km/h
-            vehicle.is_active = True  # Explicitly set as active
+            vehicle.speed = random.uniform(20, 60)
+            vehicle.is_active = True
             vehicle.is_available = True
             vehicle.last_seen = datetime.utcnow()
             vehicle.updated_at = datetime.utcnow()
@@ -410,29 +445,95 @@ def seed_vehicles():
             db.session.add(vehicle)
             created_count += 1
         else:
-            # Update existing vehicle if it's missing coordinates or inactive
-            needs_update = False
-            
-            if not existing.current_lat or not existing.current_lng:
-                existing.current_lat = center_lat + random.uniform(-0.04, 0.04)
-                existing.current_lng = center_lng + random.uniform(-0.04, 0.04)
-                needs_update = True
-            
-            if not existing.is_active:
-                existing.is_active = True
-                needs_update = True
-            
-            if needs_update:
-                if not existing.bearing:
-                    existing.bearing = random.uniform(0, 360)
-                if not existing.speed:
-                    existing.speed = random.uniform(20, 60)
-                existing.last_seen = datetime.utcnow()
-                existing.updated_at = datetime.utcnow()
-                updated_count += 1
+            # Always update static vehicles to ensure they're active and in correct location
+            existing.current_lat = current_lat
+            existing.current_lng = current_lng
+            if not existing.bearing:
+                existing.bearing = random.uniform(0, 360)
+            if not existing.speed:
+                existing.speed = random.uniform(20, 60)
+            existing.is_active = True
+            existing.is_available = True
+            existing.last_seen = datetime.utcnow()
+            existing.updated_at = datetime.utcnow()
+            updated_count += 1
     
     db.session.commit()
     return created_count, updated_count
+
+
+def seed_random_vehicles(count=None):
+    """Seed random vehicles (1-5 additional vehicles)"""
+    # Default map center coordinates (Kigali center)
+    center_lat = -1.9441
+    center_lng = 30.0619
+    
+    # Determine how many random vehicles to create (1-5)
+    if count is None:
+        count = random.randint(1, 5)
+    
+    vehicle_types = ['bus', 'taxi', 'moto']
+    operators = ['Tap&Go', 'Private', 'City Transport']
+    fuel_types = ['petrol', 'diesel', 'electric', 'hybrid']
+    
+    created_count = 0
+    
+    for i in range(count):
+        vehicle_type = random.choice(vehicle_types)
+        
+        # Generate unique registration
+        registration = f'RAND{random.randint(1000, 9999)}{chr(random.randint(65, 90))}'
+        
+        # Check if registration already exists
+        while Vehicle.query.filter_by(registration=registration).first():
+            registration = f'RAND{random.randint(1000, 9999)}{chr(random.randint(65, 90))}'
+        
+        vehicle_data = {
+            'vehicle_type': vehicle_type,
+            'registration': registration,
+            'operator': random.choice(operators),
+            'capacity': 50 if vehicle_type == 'bus' else (4 if vehicle_type == 'taxi' else 2),
+            'fuel_type': random.choice(fuel_types) if vehicle_type != 'bus' else random.choice(['diesel', 'electric']),
+        }
+        
+        # Add route info for buses
+        if vehicle_type == 'bus':
+            routes = [
+                {'route_id': 'RT001', 'route_name': 'Nyabugogo - Kacyiru'},
+                {'route_id': 'RT002', 'route_name': 'Kimironko - Nyabugogo'},
+                {'route_id': 'RT003', 'route_name': 'Remera - Kacyiru'},
+                {'route_id': 'RT004', 'route_name': 'Nyamirambo - Kimironko'},
+            ]
+            vehicle_data.update(random.choice(routes))
+        
+        vehicle = Vehicle(**vehicle_data)
+        
+        # Random location within 4km of center
+        vehicle.current_lat = center_lat + random.uniform(-0.04, 0.04)
+        vehicle.current_lng = center_lng + random.uniform(-0.04, 0.04)
+        vehicle.bearing = random.uniform(0, 360)
+        vehicle.speed = random.uniform(20, 60)
+        vehicle.is_active = True
+        vehicle.is_available = True
+        vehicle.last_seen = datetime.utcnow()
+        vehicle.updated_at = datetime.utcnow()
+        
+        db.session.add(vehicle)
+        created_count += 1
+    
+    db.session.commit()
+    return created_count
+
+
+def seed_vehicles():
+    """Seed vehicles: ensures 5 static vehicles exist, then adds 1-5 random vehicles"""
+    # First, ensure 5 static vehicles exist
+    static_created, static_updated = seed_static_vehicles()
+    
+    # Then add 1-5 random vehicles
+    random_created = seed_random_vehicles()
+    
+    return static_created + random_created, static_updated
 
 def seed_fare_rules():
     """Seed fare rules"""
