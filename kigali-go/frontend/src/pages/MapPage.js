@@ -463,24 +463,6 @@ const MapPage = () => {
                       showInfoWindow={true}
                     />
                   ))}
-                {!vehiclesLoading && vehicles.length === 0 && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 10,
-                      left: 10,
-                      bgcolor: 'warning.main',
-                      color: 'white',
-                      p: 1.5,
-                      borderRadius: 1,
-                      fontSize: '12px',
-                      zIndex: 1000,
-                      maxWidth: 250,
-                    }}
-                  >
-                    No vehicles found. Make sure vehicles are seeded and location is set.
-                  </Box>
-                )}
 
                 {/* Stop Markers */}
                 {showStops &&
