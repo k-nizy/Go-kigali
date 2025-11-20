@@ -717,12 +717,23 @@ const MapPage = () => {
               ) : (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <LocationOn sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography color="text.secondary">
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                     No vehicles nearby
                   </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    {userLocation 
+                      ? `No vehicles found within ${5}km of your location. Try refreshing or check if vehicles are active.`
+                      : 'Enable location services to see nearby vehicles.'}
+                  </Typography>
                   <Button variant="outlined" onClick={handleManualRefresh} sx={{ mt: 2 }}>
+                    <Refresh sx={{ mr: 1, fontSize: 18 }} />
                     Refresh
                   </Button>
+                  {lastUpdate && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                      Last updated: {new Date(lastUpdate).toLocaleTimeString()}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Paper>
