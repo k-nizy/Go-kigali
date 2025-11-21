@@ -109,8 +109,8 @@ def geocode_location(location):
     
     return None, None
 
-@api_bp.route('/routes', methods=['POST', 'GET'])
 @api_bp.route('/routes/plan', methods=['GET'])
+@api_bp.route('/routes', methods=['GET', 'POST'])
 @rate_limit_decorator("60 per minute")
 def plan_route():
     """Plan a route between origin and destination"""

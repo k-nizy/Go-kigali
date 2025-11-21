@@ -8,9 +8,11 @@ from app.extensions import db
 from models.vehicle import Vehicle
 from models.stop import Stop
 from models.zone import Zone
-from datetime import datetime
+from models.trip import Trip
+from datetime import datetime, timedelta
 import math
 import os
+from sqlalchemy import or_
 
 map_bp = Blueprint('map', __name__)
 

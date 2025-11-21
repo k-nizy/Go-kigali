@@ -63,6 +63,16 @@ const VehicleMarker = ({
             <strong>Operator:</strong> ${vehicle.operator}
           </div>
         ` : ''}
+        ${vehicle.bearing != null ? `
+          <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
+            <strong>Bearing:</strong> ${Math.round(vehicle.bearing)}°
+          </div>
+        ` : ''}
+        ${vehicle.speed != null ? `
+          <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
+            <strong>Speed:</strong> ${Number(vehicle.speed).toFixed(0)} km/h
+          </div>
+        ` : ''}
         ${vehicle.distance_km ? `
           <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
             <strong>Distance:</strong> ${vehicle.distance_km.toFixed(1)} km

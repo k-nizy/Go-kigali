@@ -7,7 +7,9 @@ from flask import Blueprint, request, jsonify, current_app, g
 from app.extensions import db, limiter, cache
 from models.vehicle import Vehicle
 from models.stop import Stop
+from app.utils.vehicle_seed import VehicleSeeder, SeedConfig
 from datetime import datetime, timedelta
+from sqlalchemy import func
 import math
 import time
 import logging
@@ -135,201 +137,194 @@ def get_cache_key():
     args.pop('_', None)
     return f"vehicles:{':'.join(f'{k}={v}' for k, v in sorted(args.items()))}"
 
+
+def _request_context(extra=None):
+    ctx = {
+        'path': request.path,
+        'query': dict(request.args),
+        'remote_ip': request.headers.get('X-Forwarded-For', request.remote_addr),
+        'user_agent': request.headers.get('User-Agent'),
+    }
+    if extra:
+        ctx.update(extra)
+    return ctx
+
+
+ALLOWED_VEHICLE_TYPES = {'bus', 'taxi', 'moto'}
+
+
+def _validate_coordinates(lat, lng):
+    if lat is None or lng is None:
+        raise ValueError('Latitude and longitude are required')
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        raise ValueError('Invalid coordinates provided')
+
+
+def _serialize_vehicle_record(record, distance=None):
+    data = {
+        'id': record.id,
+        'registration': record.registration,
+        'type': getattr(record, 'vehicle_type', None) or getattr(record, 'type', None),
+        'vehicle_type': getattr(record, 'vehicle_type', None) or getattr(record, 'type', None),
+        'lat': getattr(record, 'current_lat', None) or getattr(record, 'lat', None),
+        'lng': getattr(record, 'current_lng', None) or getattr(record, 'lng', None),
+        'current_lat': getattr(record, 'current_lat', None) or getattr(record, 'lat', None),
+        'current_lng': getattr(record, 'current_lng', None) or getattr(record, 'lng', None),
+        'heading': getattr(record, 'heading', None) or getattr(record, 'bearing', None) or 0,
+        'speed': getattr(record, 'speed', None) or 0,
+        'bearing': getattr(record, 'bearing', None) or getattr(record, 'heading', None) or 0,
+        'route_name': getattr(record, 'route_name', None),
+        'operator': getattr(record, 'operator', None),
+        'is_active': getattr(record, 'is_active', True),
+        'updated_at': record.updated_at.isoformat() if getattr(record, 'updated_at', None) else None,
+    }
+    if hasattr(record, 'eta_minutes') and record.eta_minutes is not None:
+        data['eta_minutes'] = record.eta_minutes
+    if distance is not None:
+        data['distance_km'] = round(distance, 2)
+    return data
+
+
+def _vehicle_counts():
+    try:
+        total = db.session.query(func.count(Vehicle.id)).scalar()
+        active = db.session.query(func.count(Vehicle.id)).filter(Vehicle.is_active == True).scalar()
+        with_location = db.session.query(func.count(Vehicle.id)).filter(
+            Vehicle.is_active == True,
+            Vehicle.current_lat.isnot(None),
+            Vehicle.current_lng.isnot(None)
+        ).scalar()
+        by_type = dict(
+            db.session.query(Vehicle.vehicle_type, func.count(Vehicle.id))
+            .group_by(Vehicle.vehicle_type)
+            .all()
+        )
+    except Exception as exc:
+        logger.error('Failed to compute vehicle counts', extra=_request_context({'error': str(exc)}))
+        return {
+            'total': 0,
+            'active': 0,
+            'with_location': 0,
+            'by_type': {},
+        }
+
+    return {
+        'total': total,
+        'active': active,
+        'with_location': with_location,
+        'by_type': by_type,
+    }
+
 @realtime_bp.route('/vehicles/realtime', methods=['GET'])
 @limiter.limit("500 per minute")  # Increased limit for real-time data
 @handle_errors
 def get_realtime_vehicles():
-    """
-    Get real-time vehicle updates
-    
-    Query Parameters:
-    - lat (float): Latitude (required)
-    - lng (float): Longitude (required)
-    - radius (float): Search radius in km (default: 5.0)
-    - since (string): ISO timestamp of last update (optional)
-    - type (string): Vehicle type filter (bus, taxi, moto) (optional)
-    - _ (int): Cache-busting parameter (ignored)
-    
-    Response:
-    {
-        "status": "success",
-        "data": {
-            "vehicles": [
-                {
-                    "id": "vehicle_id",
-                    "type": "bus|taxi|moto",
-                    "lat": 0.0,
-                    "lng": 0.0,
-                    "heading": 0,
-                    "speed": 0,
-                    "updated_at": "ISO timestamp"
-                }
-            ],
-            "timestamp": "ISO timestamp",
-            "count": 0
-        }
-    }
-    """
-    """
-    Get real-time vehicle updates since last timestamp
-    Uses long-polling approach for real-time updates
-    
-    Query params:
-    - lat: latitude (required)
-    - lng: longitude (required)
-    - radius: radius in km (default: 5.0)
-    - since: ISO timestamp of last update (optional)
-    - type: vehicle type filter (bus, taxi, moto) (optional)
-    """
-    # Parse and validate parameters
-    try:
-        lat = float(request.args.get('lat', 0))
-        lng = float(request.args.get('lng', 0))
-        radius = min(float(request.args.get('radius', 5.0)), 20.0)  # Cap radius at 20km
-        vehicle_type = request.args.get('type')  # optional filter
-        since_str = request.args.get('since')  # ISO timestamp
-        
-        # Validate coordinates
-        if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
-            raise ValueError("Invalid coordinates provided")
-        
-        if lat == 0 and lng == 0:
-            return jsonify({'error': 'Valid coordinates are required'}), 400
-        
-        # Parse since timestamp if provided
-        since = None
-        if since_str:
-            try:
-                since = datetime.fromisoformat(since_str.replace('Z', '+00:00'))
-                # Don't allow timestamps too far in the past to prevent abuse
-                max_age = datetime.utcnow() - timedelta(days=1)
-                if since < max_age:
-                    since = max_age
-            except ValueError:
-                return jsonify({
-                    'status': 'error',
-                    'message': 'Invalid timestamp format. Use ISO 8601 format.',
-                    'code': 400
-                }), 400
-        
-        # Use a cache key based on the request parameters
-        cache_key = get_cache_key()
-        
-        # Try to get from cache first (only for recent data)
-        if not since:
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                return jsonify({
-                    'status': 'success',
-                    'data': cached_data,
-                    'cached': True
-                })
-        
-        # Calculate bounding box for initial filtering (faster than calculating distance for all vehicles)
-        # 1 degree of latitude ~= 111 km, 1 degree of longitude varies by latitude
-        lat_radius = radius / 111.0
-        lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
-        
-        # Log query parameters for debugging
-        logger.debug(f"Querying vehicles with params: lat={lat}, lng={lng}, radius={radius}, vehicle_type={vehicle_type}, since={since}")
-        
-        # Build base query
-        query = db.session.query(
-            Vehicle.id,
-            Vehicle.registration,
-            Vehicle.vehicle_type,
-            Vehicle.current_lat,
-            Vehicle.current_lng,
-            Vehicle.heading,
-            Vehicle.speed,
-            Vehicle.updated_at
-        ).filter(
-            Vehicle.is_active == True,
-            Vehicle.current_lat.isnot(None),
-            Vehicle.current_lng.isnot(None),
-            Vehicle.current_lat.between(lat - lat_radius, lat + lat_radius),
-            Vehicle.current_lng.between(lng - lng_radius, lng + lng_radius)
-        )
-        
-        logger.debug(f"Base query SQL: {str(query)}")
-        
-        # Log the number of active vehicles in the database (for debugging)
+    """Return all active vehicles near a coordinate with optional filters."""
+
+    lat = request.args.get('lat', type=float)
+    lng = request.args.get('lng', type=float)
+    radius = min(request.args.get('radius', type=float, default=5.0) or 5.0, 20.0)
+    vehicle_type = request.args.get('type')
+    since_str = request.args.get('since')
+    auto_seed = request.args.get('auto_seed', 'false').lower() == 'true'
+    include_meta = request.args.get('include_meta', 'true').lower() != 'false'
+
+    _validate_coordinates(lat, lng)
+    if vehicle_type:
+        vehicle_type = vehicle_type.lower()
+        if vehicle_type not in ALLOWED_VEHICLE_TYPES:
+            raise ValueError(f"Invalid vehicle type '{vehicle_type}'. Allowed: {', '.join(sorted(ALLOWED_VEHICLE_TYPES))}")
+
+    since = None
+    if since_str:
         try:
-            total_vehicles = db.session.query(Vehicle).filter(Vehicle.is_active == True).count()
-            logger.debug(f"Total active vehicles in database: {total_vehicles}")
-        except Exception as e:
-            logger.error(f"Error counting total vehicles: {str(e)}")
-        
-        # Apply filters
-        if since:
-            query = query.filter(Vehicle.updated_at >= since)
-        
-        if vehicle_type:
-            query = query.filter(Vehicle.vehicle_type == vehicle_type)
-        
-        # Execute query
+            since = datetime.fromisoformat(since_str.replace('Z', '+00:00'))
+            max_age = datetime.utcnow() - timedelta(days=1)
+            if since < max_age:
+                since = max_age
+        except ValueError:
+            raise ValueError('Invalid timestamp format. Use ISO 8601 (e.g. 2024-01-01T12:00:00Z).')
+
+    cache_key = get_cache_key()
+    if not since:
+        cached_payload = cache.get(cache_key)
+        if cached_payload:
+            cached_payload['cached'] = True
+            return jsonify(cached_payload)
+
+    lat_radius = radius / 111.0
+    lng_radius = radius / (111.0 * math.cos(math.radians(lat)))
+
+    query = db.session.query(Vehicle).filter(
+        Vehicle.is_active == True,
+        Vehicle.current_lat.isnot(None),
+        Vehicle.current_lng.isnot(None),
+        Vehicle.current_lat.between(lat - lat_radius, lat + lat_radius),
+        Vehicle.current_lng.between(lng - lng_radius, lng + lng_radius)
+    )
+
+    if since:
+        query = query.filter(Vehicle.updated_at >= since)
+    if vehicle_type:
+        query = query.filter(Vehicle.vehicle_type == vehicle_type)
+
+    vehicles = query.all()
+    seed_result = None
+
+    if not vehicles and auto_seed:
+        seed_config = SeedConfig(
+            total=20,
+            radius_km=max(radius, 3.0),
+            center={'lat': lat, 'lng': lng},
+        )
+        seeder = VehicleSeeder()
+        seed_result = seeder.seed(seed_config)
         vehicles = query.all()
-        
-        # Process results
-        now = datetime.utcnow()
-        result_vehicles = []
-        
-        for vehicle in vehicles:
-            # Calculate distance and filter by radius
-            distance = calculate_distance_km(
-                lat, lng,
-                vehicle.current_lat, vehicle.current_lng
-            )
-            
-            if distance <= radius:
-                result_vehicles.append({
-                    'id': vehicle.id,
-                    'registration': vehicle.registration,
-                    'type': vehicle.vehicle_type,
-                    'lat': vehicle.current_lat,
-                    'lng': vehicle.current_lng,
-                    'heading': vehicle.heading or 0,
-                    'speed': vehicle.speed or 0,
-                    'distance_km': round(distance, 2),
-                    'updated_at': vehicle.updated_at.isoformat() if vehicle.updated_at else None
-                })
-        
-        # Prepare response
-        response_data = {
-            'vehicles': result_vehicles,
-            'timestamp': now.isoformat(),
-            'count': len(result_vehicles),
-            'center': {'lat': lat, 'lng': lng},
-            'radius_km': radius
+
+    now = datetime.utcnow()
+    result_vehicles = []
+    for vehicle in vehicles:
+        distance = calculate_distance_km(lat, lng, vehicle.current_lat, vehicle.current_lng)
+        if distance <= radius:
+            serialized = _serialize_vehicle_record(vehicle, distance)
+            serialized['eta_minutes'] = estimate_eta(distance, vehicle.vehicle_type)
+            result_vehicles.append(serialized)
+
+    result_vehicles.sort(key=lambda v: v.get('distance_km', 0))
+
+    response_payload = {
+        'status': 'success',
+        'vehicles': result_vehicles,
+        'count': len(result_vehicles),
+        'center': {'lat': lat, 'lng': lng},
+        'radius_km': radius,
+        'timestamp': now.isoformat(),
+    }
+
+    if include_meta:
+        response_payload['meta'] = {
+            'filters': {
+                'type': vehicle_type,
+                'since': since.isoformat() if since else None,
+                'auto_seed': auto_seed,
+            },
+            'counts': _vehicle_counts(),
         }
-        
-        # Cache the response for 5 seconds (for identical requests)
-        if not since:
-            cache.set(cache_key, response_data, timeout=5)
-        
-        return jsonify({
-            'status': 'success',
-            'data': response_data
+        if seed_result:
+            response_payload['meta']['seed'] = seed_result
+
+    cache.set(cache_key, response_payload, timeout=5)
+
+    logger.info(
+        'Realtime vehicles response',
+        extra=_request_context({
+            'vehicle_count': len(result_vehicles),
+            'radius_km': radius,
+            'vehicle_type': vehicle_type,
         })
-        
-    except ValueError as e:
-        logger.warning(f"Invalid parameter: {str(e)}", exc_info=True)
-        return jsonify({
-            'status': 'error',
-            'message': f'Invalid parameter: {str(e)}',
-            'code': 400
-        }), 400
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        logger.error(f'Error fetching real-time vehicles: {str(e)}\n{error_details}')
-        return jsonify({
-            'status': 'error',
-            'message': f'Internal server error: {str(e)}',
-            'code': 500,
-            'details': str(e),
-            'type': type(e).__name__
-        }), 500
+    )
+
+    return jsonify(response_payload)
 
 
 @realtime_bp.route('/stops/eta', methods=['GET'])
