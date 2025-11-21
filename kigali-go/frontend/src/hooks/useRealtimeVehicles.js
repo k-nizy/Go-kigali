@@ -7,6 +7,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiService } from '../services/api';
 import { toast } from 'react-hot-toast';
 
+// Get API base URL from environment variables
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+
 /**
  * Hook for real-time vehicle tracking
  * @param {Object} options - Configuration options
@@ -36,7 +39,7 @@ const useRealtimeVehicles = ({
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lastTimestamp, setLastTimestamp] = useState(null);
   const [retryAttempt, setRetryAttempt] = useState(0);
-  
+
   const intervalRef = useRef(null);
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
@@ -64,7 +67,8 @@ const useRealtimeVehicles = ({
 
     // Clean up any pending requests
     cleanup();
-    
+
+
     // Create new abort controller
     abortControllerRef.current = new AbortController();
 
@@ -74,17 +78,17 @@ const useRealtimeVehicles = ({
     try {
       // Add cache-busting parameter to avoid stale data
       const timestamp = new Date().getTime();
-      
+
       // Build URL with query params
-      let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=${encodeURIComponent(radius)}&_=${timestamp}`;
+      let url = `${API_BASE_URL}/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=${encodeURIComponent(radius)}&_=${timestamp}`;
       if (autoSeed && !since && !seededRef.current) {
         url += `&auto_seed=true`;
       }
-      
+
       if (vehicleType) {
         url += `&type=${encodeURIComponent(vehicleType)}`;
       }
-      
+
       if (since) {
         url += `&since=${encodeURIComponent(since)}`;
       }
@@ -116,7 +120,7 @@ const useRealtimeVehicles = ({
       if (isMountedRef.current) {
         // Reset retry counter on successful response
         setRetryAttempt(0);
-        
+
         // Log only in development
         if (process.env.NODE_ENV === 'development') {
           console.debug('API Response:', {
@@ -135,20 +139,20 @@ const useRealtimeVehicles = ({
             if (!since) {
               return data.vehicles || [];
             }
-            
+
             // Otherwise, merge with existing vehicles
             const vehicleMap = new Map();
-            
+
             // Add existing vehicles to map
             prevVehicles.forEach((v) => {
               vehicleMap.set(v.id, v);
             });
-            
+
             // Update or add new vehicles
             data.vehicles.forEach((v) => {
               vehicleMap.set(v.id, v);
             });
-            
+
             // Convert back to array and sort by distance
             const sorted = Array.from(vehicleMap.values()).sort(
               (a, b) => (a.distance_km || 0) - (b.distance_km || 0)
@@ -162,40 +166,45 @@ const useRealtimeVehicles = ({
           console.log('Setting vehicles:', vehiclesList.length, vehiclesList);
           setVehicles(vehiclesList);
         }
-        
+
         setLastUpdate(new Date());
         setLastTimestamp(data.timestamp);
         lastTimestampRef.current = data.timestamp; // Update ref as well
       }
     } catch (err) {
+      // Ignore abort errors (cancelled requests)
+      if (err.name === 'AbortError') {
+        return;
+      }
+
       if (isMountedRef.current) {
         // Handle rate limiting (429 errors)
         if (err.status === 429) {
           const retryAfter = (err.data && err.data.retry_after) || 5; // Default to 5 seconds
           console.warn(`Rate limited. Retrying after ${retryAfter} seconds...`);
-          
+
           // Schedule a retry
           retryTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current) {
               fetchVehicles(since, retry + 1);
             }
           }, retryAfter * 1000);
-          
+
           setError('Server is busy. Retrying...');
           return;
         }
-        
+
         // Handle other errors with retry logic
         if (retry < MAX_RETRIES) {
           const delay = RETRY_DELAY * Math.pow(2, retry); // Exponential backoff
           console.warn(`Attempt ${retry + 1} failed. Retrying in ${delay}ms...`);
-          
+
           retryTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current) {
               fetchVehicles(since, retry + 1);
             }
           }, delay);
-          
+
           setError(`Connection issue. Retrying... (${retry + 1}/${MAX_RETRIES})`);
         } else {
           // Max retries reached
@@ -221,10 +230,10 @@ const useRealtimeVehicles = ({
   // Set up polling
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     // Initial fetch
     fetchVehicles(lastTimestampRef.current);
-    
+
     // Set up interval for polling
     if (enabled && interval > 0) {
       intervalRef.current = setInterval(() => {
@@ -234,7 +243,7 @@ const useRealtimeVehicles = ({
         }
       }, interval);
     }
-    
+
     // Clean up
     return () => {
       isMountedRef.current = false;
