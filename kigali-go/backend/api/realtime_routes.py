@@ -42,6 +42,9 @@ def handle_errors(f):
             
         except ValueError as e:
             logger.error(f"Validation error: {str(e)}", exc_info=True)
+            # Ensure session is cleaned up on error
+            db.session.rollback()
+            db.session.remove()
             return jsonify({
                 'status': 'error',
                 'message': str(e) or 'Invalid request parameters',
@@ -50,11 +53,21 @@ def handle_errors(f):
             
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+            # Ensure session is cleaned up on error
+            db.session.rollback()
+            db.session.remove()
             return jsonify({
                 'status': 'error',
                 'message': 'An unexpected error occurred',
                 'code': 500
             }), 500
+        finally:
+            # Always clean up the session after request
+            # This ensures connections are returned to the pool
+            try:
+                db.session.close()
+            except:
+                pass
             
     return wrapper
 

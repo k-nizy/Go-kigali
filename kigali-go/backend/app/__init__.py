@@ -135,6 +135,34 @@ def create_app(config_name: str = None) -> Flask:
     # Register legacy error handlers
     register_error_handlers(app)
     
+    # CRITICAL: Add session cleanup for serverless environments
+    # This ensures database connections are always returned to the pool
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        """
+        Remove database session after each request.
+        Critical for serverless environments to prevent connection pool exhaustion.
+        """
+        try:
+            if exception:
+                db.session.rollback()
+            db.session.remove()
+        except Exception as e:
+            app.logger.error(f"Error during session cleanup: {e}")
+    
+    # Also add after_request handler for additional cleanup
+    @app.after_request
+    def after_request(response):
+        """Ensure session is cleaned up after successful requests too"""
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        finally:
+            db.session.close()
+        return response
+    
+    
     # Health check endpoint
     @app.route('/health')
     @app.route('/api/health')

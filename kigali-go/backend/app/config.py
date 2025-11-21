@@ -101,7 +101,8 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = _db_url or 'sqlite:///kigali_go.db'
     
     # SQLAlchemy engine options for serverless (Vercel)
-    # Note: connect_args for psycopg2 should not duplicate URL parameters
+    # CRITICAL FIX: Use NullPool for serverless to prevent connection pool exhaustion
+    # NullPool creates a new connection for each request and closes it immediately
     _connect_args = {
         'connect_timeout': 10,  # 10 second timeout
     }
@@ -110,18 +111,31 @@ class ProductionConfig(Config):
     if _db_url and 'supabase' in _db_url.lower() and 'sslmode' not in _db_url.lower():
         _connect_args['sslmode'] = 'require'
     
-    # Allow overriding pool sizing via environment to prevent QueuePool exhaustion
-    _pool_size = int(os.getenv('SQL_POOL_SIZE', '5'))
-    _max_overflow = int(os.getenv('SQL_MAX_OVERFLOW', '10'))
-    _pool_timeout = int(os.getenv('SQL_POOL_TIMEOUT', '10'))
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,  # Verify connections before using
-        'pool_recycle': 300,    # Recycle connections after 5 minutes
-        'pool_size': _pool_size,
-        'max_overflow': _max_overflow,
-        'pool_timeout': _pool_timeout,
-        'connect_args': _connect_args
-    }
+    # Check if we should use NullPool (recommended for serverless)
+    _use_null_pool = os.getenv('SQLALCHEMY_POOL_CLASS', 'NullPool').lower() == 'nullpool'
+    
+    if _use_null_pool:
+        # NullPool: No connection pooling - creates connection per request
+        # This prevents "QueuePool limit reached" errors in serverless environments
+        from sqlalchemy.pool import NullPool
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'poolclass': NullPool,
+            'pool_pre_ping': True,  # Verify connections before using
+            'connect_args': _connect_args
+        }
+    else:
+        # Traditional pooling with minimal connections for serverless
+        _pool_size = int(os.getenv('SQL_POOL_SIZE', '1'))  # Reduced from 5
+        _max_overflow = int(os.getenv('SQL_MAX_OVERFLOW', '0'))  # Reduced from 10
+        _pool_timeout = int(os.getenv('SQL_POOL_TIMEOUT', '5'))  # Reduced from 10
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,  # Verify connections before using
+            'pool_recycle': 300,    # Recycle connections after 5 minutes
+            'pool_size': _pool_size,
+            'max_overflow': _max_overflow,
+            'pool_timeout': _pool_timeout,
+            'connect_args': _connect_args
+        }
     
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_CSRF_PROTECT = True
