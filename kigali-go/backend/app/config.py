@@ -104,7 +104,11 @@ class ProductionConfig(Config):
     # CRITICAL FIX: Use NullPool for serverless to prevent connection pool exhaustion
     # NullPool creates a new connection for each request and closes it immediately
     _connect_args = {
-        'connect_timeout': 10,  # 10 second timeout
+        'connect_timeout': 30,  # 30 second timeout for slow Supabase connections
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5,
     }
     
     # Only add sslmode to connect_args if not in URL (psycopg2 prefers URL params)
