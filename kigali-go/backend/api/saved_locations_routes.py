@@ -187,3 +187,4 @@ def delete_saved_location(location_id):
         return jsonify({'error': 'Internal server error'}), 500
 
 
+

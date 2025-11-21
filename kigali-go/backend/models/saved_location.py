@@ -49,3 +49,4 @@ class SavedLocation(db.Model):
         return f'<SavedLocation {self.name} ({self.location_type}) for user {self.user_id}>'
 
 
+
