@@ -161,12 +161,17 @@ const MapPage = () => {
     // Force refresh even if realtime is disabled
     if (currentLocation?.lat && currentLocation?.lng) {
       try {
-        const response = await fetch(
-          `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(currentLocation.lat)}&lng=${encodeURIComponent(currentLocation.lng)}&radius=5`
-        );
+        let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(currentLocation.lat)}&lng=${encodeURIComponent(currentLocation.lng)}&radius=5&auto_seed=true`;
+        if (vehicleTypeFilter && vehicleTypeFilter !== 'all') {
+          url += `&type=${encodeURIComponent(vehicleTypeFilter)}`;
+        }
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           console.log('Manual refresh loaded:', data.vehicles?.length || 0, 'vehicles');
+          if (data.meta && data.meta.seed && data.meta.seed.created > 0) {
+            toast.success(`Seeded ${data.meta.seed.created} demo vehicles`);
+          }
           if (data.vehicles && data.vehicles.length > 0) {
             setVehiclesState(data.vehicles);
           } else {

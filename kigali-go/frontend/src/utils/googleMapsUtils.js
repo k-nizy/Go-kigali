@@ -10,7 +10,7 @@
  * @param {string} color - Hex color code
  * @returns {object} Google Maps icon configuration
  */
-export const createVehicleIcon = (vehicleType, color) => {
+export const createVehicleIcon = (vehicleType, color, bearing = 0) => {
   const icons = {
     bus: '🚌',
     taxi: '🚗',
@@ -25,15 +25,18 @@ export const createVehicleIcon = (vehicleType, color) => {
   }
 
   return {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: 8,
+    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+    scale: 5.5,
     fillColor: color,
     fillOpacity: 1,
     strokeColor: '#FFFFFF',
-    strokeWeight: 2,
+    strokeWeight: 1.5,
+    rotation: Number.isFinite(bearing) ? bearing : 0,
+    anchor: new google.maps.Point(0, 2),
+    // Keep a small label for quick type recognition (optional)
     label: {
       text: emoji,
-      fontSize: '16px',
+      fontSize: '12px',
       fontWeight: 'bold',
     },
   };

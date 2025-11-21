@@ -33,6 +33,11 @@ class Config:
     
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+
+    # Cache (can be overridden by env)
+    CACHE_TYPE = os.getenv('CACHE_TYPE', 'SimpleCache')
+    CACHE_REDIS_URL = os.getenv('CACHE_REDIS_URL', '')
+    CACHE_DEFAULT_TIMEOUT = int(os.getenv('CACHE_DEFAULT_TIMEOUT', '5'))
     
     # Email configuration (for development, we'll log tokens)
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -58,6 +63,17 @@ class DevelopmentConfig(Config):
         'sqlite:///kigali_go_dev.db'
     )
     JWT_COOKIE_SECURE = False
+    # Connection pool sizing for local dev (adjustable via env)
+    _pool_size = int(os.getenv('SQL_POOL_SIZE', '5'))
+    _max_overflow = int(os.getenv('SQL_MAX_OVERFLOW', '10'))
+    _pool_timeout = int(os.getenv('SQL_POOL_TIMEOUT', '10'))
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': _pool_size,
+        'max_overflow': _max_overflow,
+        'pool_timeout': _pool_timeout,
+    }
 
 
 class TestingConfig(Config):
@@ -94,11 +110,16 @@ class ProductionConfig(Config):
     if _db_url and 'supabase' in _db_url.lower() and 'sslmode' not in _db_url.lower():
         _connect_args['sslmode'] = 'require'
     
+    # Allow overriding pool sizing via environment to prevent QueuePool exhaustion
+    _pool_size = int(os.getenv('SQL_POOL_SIZE', '5'))
+    _max_overflow = int(os.getenv('SQL_MAX_OVERFLOW', '10'))
+    _pool_timeout = int(os.getenv('SQL_POOL_TIMEOUT', '10'))
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,  # Verify connections before using
         'pool_recycle': 300,    # Recycle connections after 5 minutes
-        'pool_size': 1,         # Small pool for serverless
-        'max_overflow': 0,      # No overflow for serverless
+        'pool_size': _pool_size,
+        'max_overflow': _max_overflow,
+        'pool_timeout': _pool_timeout,
         'connect_args': _connect_args
     }
     

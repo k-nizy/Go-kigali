@@ -37,7 +37,11 @@ const VehicleMarker = ({
       lng: parseFloat(vehicle.current_lng),
     };
 
-    const icon = createVehicleIcon(vehicle.vehicle_type, getVehicleColor(vehicle.vehicle_type));
+    const icon = createVehicleIcon(
+      vehicle.vehicle_type,
+      getVehicleColor(vehicle.vehicle_type),
+      Number.isFinite(vehicle.bearing) ? vehicle.bearing : 0
+    );
 
     const marker = new window.google.maps.Marker({
       position,
@@ -61,6 +65,16 @@ const VehicleMarker = ({
         ${vehicle.operator ? `
           <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
             <strong>Operator:</strong> ${vehicle.operator}
+          </div>
+        ` : ''}
+        ${vehicle.bearing != null ? `
+          <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
+            <strong>Bearing:</strong> ${Math.round(vehicle.bearing)}°
+          </div>
+        ` : ''}
+        ${vehicle.speed != null ? `
+          <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">
+            <strong>Speed:</strong> ${Number(vehicle.speed).toFixed(0)} km/h
           </div>
         ` : ''}
         ${vehicle.distance_km ? `
@@ -119,22 +133,24 @@ const VehicleMarker = ({
     };
   }, [map, vehicle?.id]); // Only depend on map and vehicle ID to prevent infinite re-renders
 
-  // Update marker position if vehicle location changes
+  // Update marker position and icon if vehicle changes
   useEffect(() => {
-    if (markerRef.current && vehicle && vehicle.current_lat && vehicle.current_lng) {
+    if (markerRef.current && vehicle && vehicle.current_lat != null && vehicle.current_lng != null) {
       const newPosition = {
         lat: vehicle.current_lat,
         lng: vehicle.current_lng,
       };
       markerRef.current.setPosition(newPosition);
 
-      // Update icon if vehicle type changed
-      if (vehicle.vehicle_type) {
-        const icon = createVehicleIcon(vehicle.vehicle_type, getVehicleColor(vehicle.vehicle_type));
-        markerRef.current.setIcon(icon);
-      }
+      // Update icon if vehicle type or bearing changed
+      const icon = createVehicleIcon(
+        vehicle.vehicle_type,
+        getVehicleColor(vehicle.vehicle_type),
+        Number.isFinite(vehicle.bearing) ? vehicle.bearing : 0
+      );
+      markerRef.current.setIcon(icon);
     }
-  }, [vehicle?.current_lat, vehicle?.current_lng, vehicle?.vehicle_type]);
+  }, [vehicle?.current_lat, vehicle?.current_lng, vehicle?.vehicle_type, vehicle?.bearing]);
 
   // Open info window programmatically
   useEffect(() => {

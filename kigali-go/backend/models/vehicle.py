@@ -5,11 +5,17 @@ Vehicle model for KigaliGo application
 from . import db
 from datetime import datetime
 from geoalchemy2 import Geometry
-from sqlalchemy import func
+from sqlalchemy import func, CheckConstraint
 
 class Vehicle(db.Model):
     """Vehicle model for buses, taxis, and motorcycles"""
     __tablename__ = 'vehicles'
+    __table_args__ = (
+        db.Index('ix_vehicles_active', 'is_active'),
+        db.Index('ix_vehicles_vehicle_type', 'vehicle_type'),
+        db.Index('ix_vehicles_lat_lng', 'current_lat', 'current_lng'),
+        CheckConstraint('bearing >= 0 AND bearing < 360', name='ck_vehicles_bearing_range'),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     vehicle_type = db.Column(db.Enum('bus', 'taxi', 'moto', name='vehicle_type'), nullable=False)
@@ -47,7 +53,16 @@ class Vehicle(db.Model):
         """Update vehicle location"""
         self.current_lat = lat
         self.current_lng = lng
-        self.bearing = bearing
+        if bearing is not None:
+            try:
+                # Normalize and clamp to [0, 360)
+                b = float(bearing) % 360.0
+                # guard against 360 edge case
+                if b == 360.0:
+                    b = 0.0
+                self.bearing = b
+            except Exception:
+                self.bearing = None
         self.speed = speed
         self.last_seen = datetime.utcnow()
         

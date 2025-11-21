@@ -28,6 +28,7 @@ const useRealtimeVehicles = ({
   enabled = true,
   retryCount = 0,
   onError = null,
+  autoSeed = true, // seed vehicles automatically on initial empty state
 }) => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,6 +42,7 @@ const useRealtimeVehicles = ({
   const abortControllerRef = useRef(null);
   const lastTimestampRef = useRef(null);
   const retryTimeoutRef = useRef(null);
+  const seededRef = useRef(false); // ensure we only trigger auto_seed once per mount
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -75,6 +77,9 @@ const useRealtimeVehicles = ({
       
       // Build URL with query params
       let url = `/api/v1/realtime/vehicles/realtime?lat=${encodeURIComponent(location.lat)}&lng=${encodeURIComponent(location.lng)}&radius=${encodeURIComponent(radius)}&_=${timestamp}`;
+      if (autoSeed && !since && !seededRef.current) {
+        url += `&auto_seed=true`;
+      }
       
       if (vehicleType) {
         url += `&type=${encodeURIComponent(vehicleType)}`;
@@ -103,6 +108,10 @@ const useRealtimeVehicles = ({
       }
 
       const data = await response.json();
+      // Mark that we've attempted seeding on the first successful response
+      if (autoSeed && !since) {
+        seededRef.current = true;
+      }
 
       if (isMountedRef.current) {
         // Reset retry counter on successful response
