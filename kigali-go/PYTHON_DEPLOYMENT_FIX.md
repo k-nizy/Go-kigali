@@ -1,9 +1,17 @@
 # Python Deployment Fix for Render.com
 
-## Problem
+## Problems Fixed
+
+### 1. Python 3.13 Compatibility Issue
 Render.com was attempting to use Python 3.13, which caused build failures for packages like `Pillow` and `psycopg2-binary` that don't yet have pre-built wheels for Python 3.13.
 
-## Solution Applied
+### 2. Gunicorn App Import Error
+Gunicorn couldn't find the Flask app due to a module path conflict between `app.py` file and `app/` directory, causing:
+```
+gunicorn.errors.AppImportError: Failed to find attribute 'app' in 'app'.
+```
+
+## Solutions Applied
 
 ### 1. Updated Python Version to 3.12.0
 Python 3.12 is the latest stable version with full package support. The following files were updated:
@@ -20,6 +28,11 @@ Created `.python-version` files as an additional safeguard:
 ### 3. Updated Package Versions
 - ✅ Updated `Pillow` from 10.0.1 to 10.4.0 for better Python 3.12 compatibility
 
+### 4. Fixed Module Import Path
+- ✅ Added `PYTHONPATH` configuration to `render.yaml` and `Procfile`
+- ✅ Ensures Python can find all required modules when running from the backend directory
+- ✅ Resolves conflict between `app.py` file and `app/` directory
+
 ## Files Modified
 
 1. **[runtime.txt](file:///c:/Users/Qevin/OneDrive/Documents/Go-kigali/runtime.txt)**
@@ -33,6 +46,9 @@ Created `.python-version` files as an additional safeguard:
 
 4. **[kigali-go/backend/requirements.txt](file:///c:/Users/Qevin/OneDrive/Documents/Go-kigali/kigali-go/backend/requirements.txt)**
    - Updated `Pillow==10.4.0` for Python 3.12 compatibility
+
+5. **[kigali-go/Procfile](file:///c:/Users/Qevin/OneDrive/Documents/Go-kigali/kigali-go/Procfile)**
+   - Added `PYTHONPATH` export to fix module import issues
 
 ## Deployment Steps
 
