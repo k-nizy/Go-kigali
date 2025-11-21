@@ -21,4 +21,5 @@ limiter = Limiter(
 )
 ma = Marshmallow()
 bcrypt = Bcrypt()
-cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
+# Defer cache configuration to app.config (supports RedisCache, SimpleCache, etc.)
+cache = Cache()
