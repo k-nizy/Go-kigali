@@ -1,7 +1,7 @@
 .vercel
 venv/
 .env
-.env.local
+.env.locall
 *.db
 *.sqlite
 __pycache__/
