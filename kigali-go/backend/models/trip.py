@@ -1,12 +1,12 @@
 """
-Trip model for KigaliGo application
+Trip model for the KigaliGo application
 """
 
-from . import db
+from. import db
 from datetime import datetime
 
 class Trip(db.Model):
-    """Trip model for user trip records"""
+    "Trip model for user trip records"
     __tablename__ = 'trips'
     
     id = db.Column(db.Integer, primary_key=True)
