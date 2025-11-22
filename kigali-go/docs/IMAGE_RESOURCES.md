@@ -1,6 +1,6 @@
 # High-Quality Image Resources for KigaliGo
 
-## 🎯 **Using Real Photos Instead of SVG Illustrations**
+## 🎯 **The Use of Real Photos Instead of SVG Illustrations**
 
 Replace the current SVG files with these high-quality, optimized images from free stock photo sites.
 
