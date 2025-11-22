@@ -239,7 +239,7 @@ kigali-go/
    ↓
 5. User clicks verification link
    ↓
-6. Email verified → User can login
+6. Email verified → User can log in
 ```
 
 ### Login Flow
