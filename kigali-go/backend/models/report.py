@@ -1,12 +1,12 @@
 """
-Report model for KigaliGo application
+Report model for the KigaliGo application
 """
 
 from . import db
 from datetime import datetime
 
 class Report(db.Model):
-    """Report model for passenger feedback and safety reports"""
+    "Report model for passenger feedback and safety reports"
     __tablename__ = 'reports'
     
     id = db.Column(db.Integer, primary_key=True)
