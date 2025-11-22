@@ -4,7 +4,7 @@
 
 1. **Go to your Supabase Dashboard**: https://supabase.com/dashboard/project/uritamepdeesfmdebixi/database/tables
 
-2. **Open SQL Editor**: Click on "SQL Editor" in the left sidebar
+2. **Open the SQL Editor**: Click on "SQL Editor" in the left sidebar
 
 3. **Run the Setup Script**: Copy and paste the contents of `backend/supabase_setup.sql` into the SQL Editor and click "Run"
 
