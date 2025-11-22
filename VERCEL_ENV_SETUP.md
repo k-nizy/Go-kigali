@@ -22,7 +22,7 @@ SQLALCHEMY_POOL_CLASS=NullPool
 
 ## Alternative Configuration (If NullPool Doesn't Work)
 
-If for some reason NullPool causes issues, use minimal pooling instead:
+If, for some reason, NullPool causes issues, use minimal pooling instead:
 
 ```bash
 SQLALCHEMY_POOL_CLASS=QueuePool
