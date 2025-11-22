@@ -48,7 +48,7 @@ Click "Deploy" and wait for the build to complete.
 3. Connect your GitHub repository
 4. Select the repository: `kigali-go`
 
-### 2. Configure Service Settings
+### 2. Configure Service Setting
 
 - **Name**: `kigali-go-backend`
 - **Root Directory**: `backend`
