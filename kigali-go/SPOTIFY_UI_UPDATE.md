@@ -1,5 +1,3 @@
-# 🎨 Spotify-Style UI Update
-
 ## What's New
 
 Your KigaliGo app has been upgraded with a professional **Material-UI (MUI)** interface inspired by Spotify's design!
