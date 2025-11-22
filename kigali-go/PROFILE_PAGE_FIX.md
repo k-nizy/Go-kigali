@@ -26,7 +26,7 @@
 
 ---
 
-## 📊 What You'll See Now
+## 📊 What You will See Now
 
 ### Profile Header:
 ```
