@@ -22,7 +22,7 @@ This is a **connection timeout** issue, not a pool exhaustion issue. The databas
 
 ### ✅ Step 2: Check Your Database URL
 
-Your connection string should use the **transaction pooler** (port 6543), not direct connection (port 5432).
+Your connection string should use the **transaction pooler** (port 6543), not a direct connection (port 5432).
 
 **Current (from logs):** `aws-1-eu-central-1.pooler.supabase.com:5432`  
 **Should be:** `aws-1-eu-central-1.pooler.supabase.com:6543`
