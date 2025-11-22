@@ -1,6 +1,6 @@
 # 🚍 KigaliGo - Smart Urban Mobility Platform
 
-A comprehensive public transportation solution for Kigali, providing real-time tracking, route planning, and fare estimation to improve urban mobility.
+It is a comprehensive public transportation solution for Kigali, providing real-time tracking, route planning, and fare estimation to improve urban mobility.
 
 ## ✨ Features
 
