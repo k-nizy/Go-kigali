@@ -20,14 +20,14 @@ The `REACT_APP_API_URL` environment variable might be set in Vercel, causing the
 **Option A: Remove it completely (Recommended)**
 - If `REACT_APP_API_URL` exists, **delete it**
 
-**Option B: Set it to empty string**
+**Option B: Set it to an empty string**
 - Set `REACT_APP_API_URL` to an empty value (no text)
 
 ### Step 3: Redeploy
 
 After changing the environment variable:
 
-1. Go to **Deployments** tab
+1. Go to the **Deployments** tab
 2. Click on the latest deployment
 3. Click the **⋯** (three dots) menu
 4. Select **Redeploy**
@@ -35,7 +35,7 @@ After changing the environment variable:
 OR simply push a new commit:
 
 ```bash
-git add .
+git add.
 git commit -m "Update frontend environment configuration"
 git push origin main
 ```
