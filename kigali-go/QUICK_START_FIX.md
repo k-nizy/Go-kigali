@@ -12,7 +12,7 @@ I created a new startup script that skips the complex setup!
 
 ---
 
-## 🚀 Quick Start (2 Options)
+## 🚀 Quick Start (There are 2 Options)
 
 ### **Option 1: Simple Startup Script (Recommended)**
 
