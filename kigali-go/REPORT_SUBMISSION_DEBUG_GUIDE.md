@@ -1,6 +1,6 @@
 # 🔧 Report Submission - Complete Debug & Fix Guide
 
-## 🚨 Current Issue
+## 🚨 The Current Issue
 
 You're seeing error notifications instead of success messages when submitting reports.
 
