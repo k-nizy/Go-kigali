@@ -6,7 +6,7 @@ Render was **ignoring** our `render.yaml` configuration because it was looking i
 
 ### What the Logs Showed
 ```
-==> Running 'gunicorn app:app'
+==> Running 'gunicorn app: app'
 ```
 
 This is Render's **auto-detected** command, NOT our custom command from `render.yaml`. 
@@ -18,7 +18,7 @@ gunicorn "app:create_app()"
 
 But Render was running:
 ```bash
-gunicorn app:app
+gunicorn app: app
 ```
 
 ## Root Cause
