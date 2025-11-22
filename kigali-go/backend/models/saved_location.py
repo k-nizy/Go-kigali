@@ -31,7 +31,7 @@ class SavedLocation(db.Model):
     user = db.relationship('User', backref='saved_locations')
     
     def to_dict(self):
-        """Convert to dictionary for API responses"""
+        """Convert to dictionary for API responses""
         return {
             'id': self.id,
             'user_id': self.user_id,
