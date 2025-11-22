@@ -1,6 +1,6 @@
 # 🎉 Friendly Report Notification System
 
-## Overview
+## The Overview
 
 A professional, user-friendly notification system that displays encouraging messages when users submit reports. Each submission triggers a randomly selected message from a pool of 10 friendly, conversational notifications.
 
