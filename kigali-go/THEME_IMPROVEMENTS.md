@@ -1,4 +1,4 @@
-# 🎨 Theme Improvements Applied!
+# 🎨 The Theme Improvements Applied!
 
 ## What Was Fixed
 
