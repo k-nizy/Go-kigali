@@ -1,12 +1,12 @@
 """
-Saved Location model for user's favorite places (home, work, etc.)
+Saved Location model for the user's favorite places (home, work, etc.)
 """
 
 from . import db
 from datetime import datetime
 
 class SavedLocation(db.Model):
-    """Saved location model for user's favorite places"""
+    "" Saved location model for user's favorite places"
     __tablename__ = 'saved_locations'
     
     id = db.Column(db.Integer, primary_key=True)
