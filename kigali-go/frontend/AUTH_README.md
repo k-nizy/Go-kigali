@@ -1,6 +1,6 @@
 # KigaliGo Authentication Frontend
 
-Production-ready authentication UI built with React, Material-UI, and TailwindCSS. Features complete auth flows with token management, form validation, and accessibility.
+Production ready authentication UI built with React, Material-UI, and TailwindCSS. Features complete auth flows with token management, form validation, and accessibility.
 
 ## Features
 
