@@ -1,6 +1,6 @@
 # KigaliGo API Documentation
 
-This document provides comprehensive API documentation for the KigaliGo backend service.
+This document provides comprehensive API documentation for KigaliGo backend service.
 
 ## Base URL
 
