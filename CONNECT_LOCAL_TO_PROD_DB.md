@@ -7,7 +7,7 @@ The deployed Vercel app uses a **Supabase (PostgreSQL)** database.
 Because they are using different databases, vehicles you create or simulate locally **will not appear** on the deployed app.
 
 ## Solution
-To see your local simulations on the deployed app, you need to connect your local backend to the **same Supabase database** that the production app uses.
+To see yourr local simulations on the deployed app, you need to connect your local backend to the **same Supabase database** that the production app uses.
 
 ## Steps to Fix
 
