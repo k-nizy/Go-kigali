@@ -1,4 +1,4 @@
-#  Visual Guide - KigaliGo Auth Integration
+#  The Visual Guide - KigaliGo Auth Integration
 
 ##  Home Page Views
 
