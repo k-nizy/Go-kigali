@@ -4,7 +4,6 @@
 
 A professional, user-friendly notification system that displays **10 unique, encouraging messages** when users submit reports. Each submission randomly selects a different message to keep the experience fresh and engaging.
 
----
 
 ## 📦 Files Created/Modified
 
