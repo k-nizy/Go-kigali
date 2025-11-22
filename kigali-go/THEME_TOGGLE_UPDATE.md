@@ -1,4 +1,4 @@
-# 🎨 Theme Toggle Feature Added!
+# 🎨 Theme Toggle Feature Is Added!
 
 ## What's New
 
