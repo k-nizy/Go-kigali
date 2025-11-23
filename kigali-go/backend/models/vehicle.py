@@ -1,14 +1,14 @@
 """
-Vehicle model for the KigaliGo application
+Vehicle model for KigaliGo application
 """
 
-from. import db
+from . import db
 from datetime import datetime
 from geoalchemy2 import Geometry
 from sqlalchemy import func, CheckConstraint
 
 class Vehicle(db.Model):
-    "Vehicle model for buses, taxis, and motorcycles"
+    """Vehicle model for buses, taxis, and motorcycles"""
     __tablename__ = 'vehicles'
     __table_args__ = (
         db.Index('ix_vehicles_active', 'is_active'),
