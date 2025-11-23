@@ -29,7 +29,7 @@ const processQueue = (error, token = null) => {
       prom.resolve(token);
     }
   });
-  
+
   failedQueue = [];
 };
 
@@ -99,12 +99,12 @@ authApi.interceptors.response.use(
       // Attempt to refresh token
       const response = await authApi.post('/api/auth/refresh');
       const newAccessToken = response.data.access_token;
-      
+
       setAccessToken(newAccessToken);
-      
+
       // Process queued requests
       processQueue(null, newAccessToken);
-      
+
       // Retry original request
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return authApi(originalRequest);
@@ -112,10 +112,10 @@ authApi.interceptors.response.use(
       // Refresh failed, clear token and redirect to login
       processQueue(refreshError, null);
       clearAccessToken();
-      
+
       // Dispatch custom event for auth context to handle
       window.dispatchEvent(new CustomEvent('auth:logout'));
-      
+
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
@@ -148,12 +148,12 @@ export const authService = {
       password,
       remember,
     });
-    
+
     // Store access token in memory
     if (response.data.access_token) {
       setAccessToken(response.data.access_token);
     }
-    
+
     return response.data;
   },
 
@@ -176,11 +176,11 @@ export const authService = {
    */
   refresh: async () => {
     const response = await authApi.post('/api/auth/refresh');
-    
+
     if (response.data.access_token) {
       setAccessToken(response.data.access_token);
     }
-    
+
     return response.data;
   },
 

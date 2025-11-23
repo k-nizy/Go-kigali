@@ -157,7 +157,7 @@ const MapPage = () => {
   // Manual refresh function (for button click)
   const handleManualRefresh = useCallback(async () => {
     console.log('Manual refresh triggered', { currentLocation, realtimeEnabled, vehiclesCount: vehicles.length });
-    
+
     // Force refresh even if realtime is disabled
     if (currentLocation?.lat && currentLocation?.lng) {
       try {
@@ -182,7 +182,7 @@ const MapPage = () => {
         console.error('Manual refresh failed:', err);
       }
     }
-    
+
     refreshVehicles();
     if (showStops) {
       fetchStops();
@@ -203,7 +203,7 @@ const MapPage = () => {
     if (radius === 5.0) {
       setStopsLoading(true);
     }
-    
+
     try {
       // Use stops with ETA endpoint for real-time data
       const response = await apiService.stops.getWithETA(
@@ -213,7 +213,7 @@ const MapPage = () => {
       );
 
       console.log('Stops API response:', response.data);
-      
+
       if (response.data && response.data.stops) {
         const foundStops = response.data.stops;
         setStops(foundStops);
@@ -243,14 +243,14 @@ const MapPage = () => {
       }
     } catch (error) {
       console.error('Error fetching stops with ETA:', error);
-      
+
       // Handle rate limiting (429 errors) - don't retry immediately
       if (error.response?.status === 429) {
         console.warn('Rate limited on stops endpoint, skipping retry');
         setStopsLoading(false);
         return;
       }
-      
+
       // Fallback to regular stops endpoint if ETA endpoint fails
       try {
         const fallbackResponse = await apiService.stops.getNearby(
@@ -352,7 +352,7 @@ const MapPage = () => {
     if (vehicleTypeFilter === 'all') return true;
     return v.vehicle_type === vehicleTypeFilter;
   });
-  
+
   // Debug: Log filtered vehicles for list rendering
   useEffect(() => {
     console.log('Vehicle list state:', {
@@ -412,54 +412,54 @@ const MapPage = () => {
             >
               <GoogleMapsLoader>
                 <GoogleMapContainer
-                center={mapCenter}
-                zoom={userLocation ? 14 : 13}
-                onMapLoad={handleMapLoad}
-                mapOptions={{
-                  styles: mode === 'dark' ? [
-                    { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-                    { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-                    { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-                  ] : [],
-                }}
-              >
-                {/* User Location Marker */}
-                {userLocation && (
-                  <UserLocationMarker
-                    map={map}
-                    position={userLocation}
-                    showRadius={true}
-                    radiusKm={5}
-                    accuracy={userLocation.accuracy}
-                    heading={userLocation.heading}
-                    animated={true}
-                  />
-                )}
-
-                {/* Vehicle Markers */}
-                {map && filteredVehicles.length > 0 && filteredVehicles
-                  .filter(v => v && v.current_lat != null && v.current_lng != null && !isNaN(v.current_lat) && !isNaN(v.current_lng))
-                  .map((vehicle) => (
-                    <VehicleMarker
-                      key={`vehicle-${vehicle.id}`}
+                  center={mapCenter}
+                  zoom={userLocation ? 14 : 13}
+                  onMapLoad={handleMapLoad}
+                  mapOptions={{
+                    styles: mode === 'dark' ? [
+                      { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+                      { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+                      { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+                    ] : [],
+                  }}
+                >
+                  {/* User Location Marker */}
+                  {userLocation && (
+                    <UserLocationMarker
                       map={map}
-                      vehicle={vehicle}
-                      onClick={handleVehicleClick}
-                      showInfoWindow={true}
+                      position={userLocation}
+                      showRadius={true}
+                      radiusKm={5}
+                      accuracy={userLocation.accuracy}
+                      heading={userLocation.heading}
+                      animated={true}
                     />
-                  ))}
+                  )}
 
-                {/* Stop Markers */}
-                {showStops &&
-                  stops.map((stop) => (
-                    <StopMarker
-                      key={stop.id}
-                      map={map}
-                      stop={stop}
-                      onClick={handleStopClick}
-                      showInfoWindow={true}
-                    />
-                  ))}
+                  {/* Vehicle Markers */}
+                  {map && filteredVehicles.length > 0 && filteredVehicles
+                    .filter(v => v && v.current_lat != null && v.current_lng != null && !isNaN(v.current_lat) && !isNaN(v.current_lng))
+                    .map((vehicle) => (
+                      <VehicleMarker
+                        key={`vehicle-${vehicle.id}`}
+                        map={map}
+                        vehicle={vehicle}
+                        onClick={handleVehicleClick}
+                        showInfoWindow={true}
+                      />
+                    ))}
+
+                  {/* Stop Markers */}
+                  {showStops &&
+                    stops.map((stop) => (
+                      <StopMarker
+                        key={stop.id}
+                        map={map}
+                        stop={stop}
+                        onClick={handleStopClick}
+                        showInfoWindow={true}
+                      />
+                    ))}
                 </GoogleMapContainer>
               </GoogleMapsLoader>
 
@@ -493,8 +493,8 @@ const MapPage = () => {
                     permissionStatus === 'denied'
                       ? 'Location permission denied. Click to request again.'
                       : isTracking
-                      ? 'Location tracking active'
-                      : 'Get my location'
+                        ? 'Location tracking active'
+                        : 'Get my location'
                   }
                 >
                   {locationLoading ? <CircularProgress size={24} /> : <MyLocation />}
@@ -570,7 +570,7 @@ const MapPage = () => {
               >
                 {realtimeEnabled ? 'Realtime ON' : 'Realtime OFF'}
               </Button>
-              
+
               <Button
                 variant={locationTrackingEnabled ? 'contained' : 'outlined'}
                 color={locationTrackingEnabled ? 'primary' : 'default'}
@@ -602,7 +602,7 @@ const MapPage = () => {
               >
                 {autoCenterMap ? 'Auto-Center ON' : 'Auto-Center OFF'}
               </Button>
-              
+
               {realtimeEnabled && lastUpdate && (
                 <Chip
                   label={`Updated ${new Date(lastUpdate).toLocaleTimeString()}`}
@@ -692,8 +692,8 @@ const MapPage = () => {
                           selectedVehicle?.id === vehicle.id
                             ? '2px solid #0D7377'
                             : mode === 'dark'
-                            ? 'none'
-                            : '1px solid rgba(0,0,0,0.08)',
+                              ? 'none'
+                              : '1px solid rgba(0,0,0,0.08)',
                         cursor: 'pointer',
                         '&:hover': {
                           bgcolor: mode === 'dark' ? '#333' : '#F5F7FA',
@@ -751,7 +751,7 @@ const MapPage = () => {
                     No vehicles nearby
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    {userLocation 
+                    {userLocation
                       ? `No vehicles found within ${5}km of your location. Try refreshing or check if vehicles are active.`
                       : 'Enable location services to see nearby vehicles.'}
                   </Typography>
